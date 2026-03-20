@@ -1,6 +1,5 @@
 #pragma once
 #include "player.hpp"
-#include "input_overlay.hpp"
 #include "enums.hpp"
 
 class HumanPlayer : public Player {
@@ -22,8 +21,7 @@ public:
     void beginMovePhase(const GameState& state) override;
     void beginBreakPhase(const GameState& state) override;
 
-    void handleInput(int ch) override;
-    void update(const GameState& state) override;
+    void update(int ch, const GameState& state) override;
 
     bool hasMoveReady() const override;
     Coord consumeMove() override;
@@ -31,6 +29,7 @@ public:
     bool hasBreakReady() const override;
     Coord consumeBreak() override;
 
-    InputOverlay makeOverlay() const;
+    const Coord cursor() const;
+
 };
-c
+

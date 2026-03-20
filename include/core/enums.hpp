@@ -11,6 +11,7 @@ enum class TileState {
 };
 
 enum class TurnPhase {
+    NewTurn,
     Move,
     Break,
     Finished

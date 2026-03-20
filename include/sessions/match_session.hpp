@@ -1,9 +1,14 @@
 #pragma once
-#include "coord.hpp"
-#include "enums.hpp"
+#include <vector>
 #include "game_state.hpp"
 #include "player.hpp"
 #include "turn_record.hpp"
+
+// Misc HUD elements that aren't in GameState by themselves
+struct MatchVisualState {
+    bool cursorVisible = false;
+    Coord cursor{};
+};
 
 class MatchSession {
 private:
@@ -11,20 +16,17 @@ private:
     Player* m_p1;
     Player* m_p2;
 
-    TurnPhase m_phase = TurnPhase::Move;
-    bool m_hasPendingMove = false;
-    Coord m_pendingMove{};
+    std::vector<TurnRecord> m_history;
+    TurnRecord m_currentTurnRecord{};
 
-    TurnRecord* m_history = nullptr;
-    int m_historySize = 0;
-    int m_historyCapacity = 0;
+    MatchVisualState m_visualState;
+
+    int m_gameTick = 0;
 
 private:
-    Player* currentPlayer();
-    const Player* currentPlayer() const;
+    Player& currentPlayer();
+    const Player& currentPlayer() const;
 
-    void beginTurn();
-    void ensureHistoryCapacity();
     void pushHistory(const TurnRecord& record);
 
 public:
@@ -33,14 +35,14 @@ public:
     MatchSession& operator=(const MatchSession&) = delete;
     ~MatchSession();
 
-    void handleInput(int ch);
-    void update();
+    void update(int inputChar);
 
     const GameState& state() const;
     TurnPhase phase() const;
 
-    const TurnRecord* history() const;
-    int historySize() const;
+    const std::vector<TurnRecord>& history() const;
+
+    const MatchVisualState& visualState() const;
 
     bool isFinished() const;
 };

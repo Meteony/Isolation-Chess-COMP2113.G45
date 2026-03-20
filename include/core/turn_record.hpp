@@ -6,6 +6,14 @@ struct TurnRecord {
     Side actor;
     Coord moveCoord;
     Coord breakCoord;
-    int thinkTicksBeforeMove = 0;
-    int thinkTicksBeforeBreak = 0;
+    long thinkTicksBeforeMove = 0;
+    long thinkTicksBeforeBreak = 0;
+
+    void reset(Side newActor) {
+        actor = newActor;
+        moveCoord = Coord{};
+        breakCoord = Coord{};
+        long thinkTicksBeforeMove = 0;
+        long thinkTicksBeforeBreak = 0;
+    }
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "coord.hpp"
 #include "enums.hpp"
 
@@ -6,18 +7,22 @@ class GameState {
 private:
     int m_rows;
     int m_cols;
-    TileState* m_tiles;
+    std::vector<TileState> m_tiles;
+
     Coord m_p1Pos;
     Coord m_p2Pos;
+
     Side m_sideToMove;
+    TurnPhase m_phase;
     SessionStatus m_status;
     Side m_winner;
 
 public:
     GameState(int rows, int cols);
-    GameState(const GameState& other);
-    GameState& operator=(const GameState& other);
-    ~GameState();
+
+    GameState(const GameState& other) = default;
+    GameState& operator=(const GameState& other) = default;
+    ~GameState() = default;
 
     int rows() const;
     int cols() const;
@@ -33,6 +38,9 @@ public:
 
     Side sideToMove() const;
     void setSideToMove(Side side);
+
+    TurnPhase phase() const;
+    void setPhase(TurnPhase phase);
 
     SessionStatus status() const;
     void setStatus(SessionStatus status);
