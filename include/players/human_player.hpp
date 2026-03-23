@@ -2,7 +2,8 @@
 #include "player.hpp"
 #include "enums.hpp"
 
-class HumanPlayer : public Player {
+class HumanPlayer : public Player
+{
 private:
     Coord m_cursor{};
     Coord m_pendingMove{};
@@ -18,10 +19,10 @@ public:
     HumanPlayer();
     ~HumanPlayer() override = default;
 
-    void beginMovePhase(const GameState& state) override;
-    void beginBreakPhase(const GameState& state) override;
+    void beginMovePhase(const GameState &state) override;
+    void beginBreakPhase(const GameState &state) override;
 
-    void update(int ch, const GameState& state) override;
+    void update(int ch, const GameState &state) override;
 
     bool hasMoveReady() const override;
     Coord consumeMove() override;
@@ -30,6 +31,4 @@ public:
     Coord consumeBreak() override;
 
     const Coord cursor() const;
-
 };
-

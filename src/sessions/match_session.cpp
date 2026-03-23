@@ -29,12 +29,21 @@ const Player& MatchSession::currentPlayer() const {
 void MatchSession::update(int inputChar){
     ++m_gameTick;
 
+    Player& player{currentPlayer()};
+
+    // Update UI element  
+    if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
+        m_visualState.cursorVisible = true;
+        m_visualState.cursor = human->cursor();
+    } else {
+        m_visualState.cursorVisible = false;
+    }
+
     if (m_state.status() == SessionStatus::Finished) {
          m_visualState.cursorVisible = false;
         return;
     }
     
-    Player& player{currentPlayer()};
 
     switch (m_state.phase()) {
         case TurnPhase::NewTurn: {
@@ -43,8 +52,8 @@ void MatchSession::update(int inputChar){
             // negative-start trick: later do += m_gameTick
             m_currentTurnRecord.thinkTicksBeforeMove = -m_gameTick;
 
-            player.beginMovePhase(m_state);
             m_state.setPhase(TurnPhase::Move);
+            player.beginMovePhase(m_state);
             return;
         }
 
@@ -109,14 +118,6 @@ void MatchSession::update(int inputChar){
         }
         
     }    
-    // Update UI element
-    
-    if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
-        m_visualState.cursorVisible = true;
-        m_visualState.cursor = human->cursor();
-    } else {
-        m_visualState.cursorVisible = false;
-    }
 
 
 
