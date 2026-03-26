@@ -22,7 +22,7 @@ enum class SessionStatus {
     Finished
 };
 
-enum class CpuDifficulty {
+enum class AiDifficulty {
     Easy,
     Medium,
     Hard

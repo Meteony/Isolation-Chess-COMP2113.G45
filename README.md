@@ -382,3 +382,17 @@ If one member is noticeably stronger than the others, that person should act as 
 10. `cpu_player.hpp/.cpp`
 
 This order keeps dependencies sane and lets the team validate the core before adding higher-level UI and replay features.
+
+
+## 12. AI Difficulty Levels
+
+Add an `AiPlayer` to handle single-player matches. You can choose from three difficulty levels:
+
+### Easy
+The AI moves and breaks tiles completely at random. It’s mostly there to help new players get used to the mechanics and to satisfy our project's "random events" requirement.
+
+### Medium
+This version is a "Greedy" AI. Before making a move, it scans the board and picks the spot that gives it the most possible moves in the next turn. It's harder to trap, but it doesn't try to block you yet.
+
+### Hard
+The most challenging mode. It uses a **Minimax algorithm** with **Alpha-Beta pruning** to simulate multiple turns ahead. It doesn't just look for its own path--->it actively tries to cut you off while keeping its own options open.

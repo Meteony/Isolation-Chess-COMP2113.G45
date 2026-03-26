@@ -1,0 +1,40 @@
+#pragma once
+#include "player.hpp"
+#include "enums.hpp"
+#include <random>
+
+class AiPlayer : public Player {
+public:
+    AiPlayer(AiDifficulty difficulty, Side side);
+    ~AiPlayer() override = default;
+
+    void beginMovePhase(const GameState& state) override;
+    void beginBreakPhase(const GameState& state) override;
+
+    void update(int ch, const GameState& state) override;
+
+    Coord findRandomMove(const GameState &state);
+
+    Coord findRandomBreak(const GameState &state);
+
+    bool hasMoveReady() const override { return m_moveReady; }
+    Coord consumeMove() override { m_moveReady = false; return m_nextMove; }
+
+    bool hasBreakReady() const override { return m_breakReady; }
+    Coord consumeBreak() override { m_breakReady = false; return m_nextBreak; }
+
+private:
+    AiDifficulty m_difficulty;
+    Side m_side;
+    bool m_moveReady = false;
+    bool m_breakReady = false;
+    Coord m_nextMove;
+    Coord m_nextBreak;
+
+    Coord findGreedyMove(const GameState &state, bool isMove);
+    Coord findMinimaxMove(const GameState &state, bool isMove);
+
+    int evaluate(const GameState &state);
+    int minimax(GameState state, int depth, bool isMaximizing, int alpha, int beta);
+    
+};
