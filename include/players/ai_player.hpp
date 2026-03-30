@@ -1,6 +1,6 @@
 #pragma once
 #include "player.hpp"
-#include "enums.hpp"
+#include "core/enums.hpp"
 #include <random>
 
 class AiPlayer : public Player {

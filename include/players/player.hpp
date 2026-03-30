@@ -1,6 +1,6 @@
 #pragma once
-#include "coord.hpp"
-#include "game_state.hpp"
+#include "core/coord.hpp"
+#include "core/game_state.hpp"
 
 class Player {
 public:

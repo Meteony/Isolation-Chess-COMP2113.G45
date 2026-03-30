@@ -1,5 +1,6 @@
-#include "match_session.hpp"
-#include "human_player.hpp"
+#include "sessions/match_session.hpp"
+#include "players/human_player.hpp"
+#include "core/game_rules.hpp"
 
 // Initialization Constructor
 MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2)
@@ -24,6 +25,10 @@ MatchSession::~MatchSession() {
 
 const Player& MatchSession::currentPlayer() const {
     return (m_state.sideToMove() == Side::Player1) ? *m_p1 : *m_p2;
+}
+
+static Side otherSide(Side side) {
+    return (side == Side::Player1) ? Side::Player2 : Side::Player1;
 }
 
 void MatchSession::update(int inputChar){
@@ -123,17 +128,6 @@ void MatchSession::update(int inputChar){
 
 }
 
-
-
-
-
-
-
-static Side otherSide(Side side) {
-    return (side == Side::Player1) ? Side::Player2 : Side::Player1;
-}
-
-
 // Return current player ptr
 Player& MatchSession::currentPlayer() {
     return (m_state.sideToMove() == Side::Player1) ? *m_p1 : *m_p2;
@@ -142,6 +136,11 @@ Player& MatchSession::currentPlayer() {
 void MatchSession::pushHistory(const TurnRecord& record) {
     m_history.push_back(record);
 }
+
+const MatchVisualState& MatchSession::visualState() const {
+    return m_visualState;
+};
+
 
 const std::vector<TurnRecord>& MatchSession::history() const {
     return m_history;

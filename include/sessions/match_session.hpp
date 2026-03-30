@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
-#include "game_state.hpp"
-#include "player.hpp"
-#include "turn_record.hpp"
+#include "core/game_state.hpp"
+#include "players/player.hpp"
+#include "core/turn_record.hpp"
 
 // Misc HUD elements that aren't in GameState by themselves
 struct MatchVisualState {
@@ -30,6 +30,7 @@ private:
     void pushHistory(const TurnRecord& record);
 
 public:
+
     MatchSession(int rows, int cols, Player* p1, Player* p2);
     MatchSession(const MatchSession&) = delete;
     MatchSession& operator=(const MatchSession&) = delete;

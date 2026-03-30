@@ -1,6 +1,6 @@
 #pragma once
 #include "player.hpp"
-#include "enums.hpp"
+#include "core/enums.hpp"
 
 class HumanPlayer : public Player
 {

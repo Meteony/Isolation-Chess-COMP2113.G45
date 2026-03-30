@@ -1,4 +1,4 @@
-#include "human_player.hpp"
+#include "players/human_player.hpp"
 #include <ncurses.h>
 
 namespace {

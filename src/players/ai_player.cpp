@@ -1,4 +1,4 @@
-#include "ai_player.hpp"
+#include "players/ai_player.hpp"
 #include <algorithm>
 #include <climits>
 #include <ctime>

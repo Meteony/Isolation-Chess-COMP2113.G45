@@ -1,4 +1,4 @@
-#include "game_rules.hpp"
+#include "core/game_rules.hpp"
 #include <cmath>
 
 bool GameRules::isLegalMove(const GameState& state, Side side, Coord dst)
