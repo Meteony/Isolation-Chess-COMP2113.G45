@@ -99,3 +99,28 @@ Coord AiPlayer::findGreedyMove(const GameState& state, bool isMove) {
 }
 
 //Hard (Minimax + Alpha-Beta Pruning)
+
+// placeholder stubs so hard mode compiles
+// TODO: replace with actual minimax + alpha-beta pruning
+
+int AiPlayer::evaluate(const GameState& state) {
+    // simple heuristic: count our moves minus opponent's moves
+    Side other = (m_side == Side::Player1) ? Side::Player2 : Side::Player1;
+    int ourMoves = (int)getLegalMoves(state, m_side).size();
+    int theirMoves = (int)getLegalMoves(state, other).size();
+    return ourMoves - theirMoves;
+}
+
+int AiPlayer::minimax(GameState state, int depth, bool isMaximizing, int alpha, int beta) {
+    // for now just return the eval — no lookahead yet
+    (void)depth;
+    (void)isMaximizing;
+    (void)alpha;
+    (void)beta;
+    return evaluate(state);
+}
+
+Coord AiPlayer::findMinimaxMove(const GameState& state, bool isMove) {
+    // falls back to greedy until real minimax is implemented
+    return findGreedyMove(state, isMove);
+}
