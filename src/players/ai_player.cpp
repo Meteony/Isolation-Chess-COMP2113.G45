@@ -94,14 +94,65 @@ Coord AiPlayer::findGreedyMove(const GameState& state, bool isMove) {
         }
         return best;
     } else {
-        return findRandomBreak(state); // 贪心难度下，破坏动作仍可保持部分随机以增加趣味
+        return findRandomBreak(state); 
     }
 }
 
 //Hard (Minimax + Alpha-Beta Pruning)
+int AiPlayer::evaluate(const GameState& state) {
+    int myMoves = getLegalMoves(state, m_side).size();
+    Side opponent = (m_side == Side::Player1) ? Side::Player2 : Side::Player1;
+    int oppMoves = getLegalMoves(state, opponent).size();
+    return myMoves - oppMoves;
+}
 
-// placeholder stubs so hard mode compiles
-// TODO: replace with actual minimax + alpha-beta pruning
+int AiPlayer::minimax(GameState state, int depth, bool isMaximizing, int alpha, int beta) {
+    if (depth == 0 || getLegalMoves(state, Side::Player1).empty() || getLegalMoves(state, Side::Player2).empty()) {
+        return evaluate(state);
+    }
+
+    if (isMaximizing) {
+        int maxEval = INT_MIN;
+        for (auto& m : getLegalMoves(state, m_side)) {
+            GameState sim = state;
+            sim.setPlayerPos(m_side, m);
+            int eval = minimax(sim, depth - 1, false, alpha, beta);
+            maxEval = std::max(maxEval, eval);
+            alpha = std::max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        int minEval = INT_MAX;
+        Side opp = (m_side == Side::Player1) ? Side::Player2 : Side::Player1;
+        for (auto& m : getLegalMoves(state, opp)) {
+            GameState sim = state;
+            sim.setPlayerPos(opp, m);
+            int eval = minimax(sim, depth - 1, true, alpha, beta);
+            minEval = std::min(minEval, eval);
+            beta = std::min(beta, eval);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
+Coord AiPlayer::findMinimaxMove(const GameState& state, bool isMove) {
+    if (!isMove) return findRandomBreak(state);
+
+    auto moves = getLegalMoves(state, m_side);
+    Coord bestMove = moves.empty() ? state.playerPos(m_side) : moves[0];
+    int bestVal = INT_MIN;
+
+    for (auto& m : moves) {
+        GameState sim = state;
+        sim.setPlayerPos(m_side, m);
+        int moveVal = minimax(sim, 3, false, INT_MIN, INT_MAX); 
+        if (moveVal > bestVal) {
+            bestVal = moveVal;
+            bestMove = m;
+        }
+    }
+    return bestMove;
+}
 
 int AiPlayer::evaluate(const GameState& state) {
     // simple heuristic: count our moves minus opponent's moves
