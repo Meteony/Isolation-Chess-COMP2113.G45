@@ -1,39 +1,98 @@
 #include "sessions/replay_session.hpp"
 #include "core/game_rules.hpp"
+#include <cassert>
 
 ReplaySession::ReplaySession(const GameState& initialState, const std::vector<TurnRecord>& history)
-  : initialState_(initialState)
-  , history_(history)
-  , currentState_(initialState)
-  , turnIndex_(0)
-  , phase_(history.empty() ? ReplayPhase::Finished : ReplayPhase::Move) // member initializer list
+  : r_state(initialState)
+  , r_initialState(initialState)
+  , r_history(history)
+  , r_turnIndex(0) // member initializer list
 {
+  updateVisualState();
+}
+
+
+void ReplaySession::update (int inputChar) {
+  //input handling
+  switch (inputChar) {
+    case 'a':
+    case 'A': //backward
+      setAutoPlay(false);
+      stepBackward();
+      break;
+
+    case 'd':
+    case 'D': //forward
+      setAutoPlay(false);
+      stepForward();
+      break;
+
+    case ' ': //space for autoplay on/off
+      toggleAutoPlay();
+      break;
+
+    case 'r':
+    case 'R': //reset to start
+      setAutoPlay(false);
+      reset();
+      break;
+  }
+
+  //autoplay tick tracking
+  if (r_autoPlayActive && !isFinished()) {
+    r_autoPlayCounter++;
+    if (r_autoPlayCounter >= r_autoPlayDelayTicks) {
+      r_autoPlayCounter = 0;
+      if (!stepForward()) { //reached end
+        setAutoPlay(false);
+      }
+    }
+  }
+
+  updateVisualState();
+}
+
+const GameState& ReplaySession::state() const {
+  return r_state;
+}
+
+TurnPhase ReplaySession::phase() const {
+  return r_state.phase();
+}
+
+const std::vector<TurnRecord>& ReplaySession::history() const {
+  return r_history;
+}
+
+const ReplayVisualState& ReplaySession::visualState() const {
+  return r_visualState;
+}
+
+bool ReplaySession::isFinished() const {
+  return r_state.phase() == TurnPhase::Finished;
 }
 
 void ReplaySession::reset() {
-  currentState_ = initialState_;
-  turnIndex_ = 0;
-  phase_ = history_.empty() ? ReplayPhase::Finished : ReplayPhase::Move;
+  r_state = r_initialState;
+  r_turnIndex = 0;
+  r_state.setPhase( r_history.empty() ? TurnPhase::Finished : TurnPhase::NewTurn );
+  updateVisualState();
 }
 
 void ReplaySession::applyCurrentMove() {
-  assert(turnIndex_ >= 0 && turnIndex_ < static_cast<int>(history_.size()));
-  const TurnRecord& turn = history_[turnIndex_];
-  GameRules::applyMove(currentState_, turn.actor, turn.moveCoord);
+  assert(r_turnIndex < r_history.size());
+  const TurnRecord& turn = r_history[r_turnIndex];
+  GameRules::applyMove(r_state, turn.actor, turn.moveCoord);
 }
 
 void ReplaySession::applyCurrentBreak() {
-  assert(turnIndex_ >= 0 && turnIndex_ < static_cast<int>(history_.size()));
-  const TurnRecord& turn = history_[turnIndex_];
-  GameRules::applyBreak(currentState_, turn.breakCoord);
+  assert(r_turnIndex < r_history.size());
+  const TurnRecord& turn = r_history[r_turnIndex];
+  GameRules::applyBreak(r_state, turn.breakCoord);
 }
 
 bool ReplaySession::hasNextAction() const {
-  if (phase_ == ReplayPhase::Finished) { //return false if replay explicitly finished
-    return false;
-  }
-
-  if (turnIndex_ >= history_.size()) { //return false if all turns consumed
+  if (isFinished() || r_turnIndex >= r_history.size()) { 
     return false;
   }
 
@@ -41,10 +100,10 @@ bool ReplaySession::hasNextAction() const {
 }
 
 bool ReplaySession::hasPreviousAction() const {
-  if (history_.empty()) {
+  if (r_history.empty()) {
     return false;
   }
-  if (turnIndex_ == 0 && phase_ == ReplayPhase::Move) {
+  if (r_turnIndex == 0 && r_state.phase() == TurnPhase::NewTurn) {
     return false;
   }
   return true;
@@ -55,16 +114,21 @@ bool ReplaySession::stepForward() {
     return false;
   }
   
-  if (phase_ == ReplayPhase::Move) { //apply the move
-    applyCurrentMove();
-    phase_ = ReplayPhase::Break;
+  if (r_state.phase() == TurnPhase::NewTurn) {
+    r_state.setPhase(TurnPhase::Move);
     return true;
   }
 
-  else if (phase_ == ReplayPhase::Break) {
+  else if (r_state.phase() == TurnPhase::Move) { //apply the move
+    applyCurrentMove();
+    r_state.setPhase(TurnPhase::Break);
+    return true;
+  }
+
+  else if (r_state.phase() == TurnPhase::Break) {
     applyCurrentBreak();
-    turnIndex_++;
-    phase_ = (turnIndex_ < static_cast<int>(history_.size())) ? ReplayPhase::Move : ReplayPhase::Finished;
+    ++r_turnIndex;
+    r_state.setPhase((r_turnIndex < r_history.size()) ? TurnPhase::NewTurn : TurnPhase::Finished);
     return true;
   }
   
@@ -76,52 +140,71 @@ bool ReplaySession::stepBackward() {
     return false;
   }
 
-  int targetTurn = turnIndex_;
-  ReplayPhase targetPhase = phase_;
+  size_t targetTurn = r_turnIndex;
+  TurnPhase targetPhase = r_state.phase();
 
-  if (phase_ == ReplayPhase::Move) { //go to break phase of previous turn
-    if (turnIndex_ == 0) { //no previous turn
+  if (r_state.phase() == TurnPhase::NewTurn) { //go to break phase of previous turn
+    if (r_turnIndex == 0) { //no previous turn
       return false;
     }
-    targetTurn = turnIndex_ - 1;
-    targetPhase = ReplayPhase::Break;
+    targetTurn = r_turnIndex - 1;
+    targetPhase = TurnPhase::Break;
   }
 
-  else if (phase_ == ReplayPhase::Break) { //go back to move phase of same turn
-    targetPhase = ReplayPhase::Move;
+  else if (r_state.phase() == TurnPhase::Move) {
+    targetPhase = TurnPhase::NewTurn;
+    //targetTurn stays the same
+  }
+
+  else if (r_state.phase() == TurnPhase::Break) { //go back to move phase of same turn
+    targetPhase = TurnPhase::Move;
     //targetTurn stays the same
   }
 
   else { //ReplayPhase::Finished
-    if (history_.empty()) {
+    if (r_history.empty()) {
       return false;
     }
-    targetTurn = static_cast<int>(history_.size()) - 1;
-    targetPhase = ReplayPhase::Break;
+    targetTurn = r_history.size() - 1;
+    targetPhase = TurnPhase::Break;
   }
 
   replayToState(targetTurn, targetPhase);
   return true;
 }
 
-void ReplaySession::replayToState(int targetTurnIndex, ReplayPhase targetPhase) {
+void ReplaySession::replayToState(size_t targetTurnIndex, TurnPhase targetPhase) {
   reset();
 
   //replay forward until reach desired (turnIndex, phase)
-  while (turnIndex_ < targetTurnIndex || (turnIndex_ == targetTurnIndex && phase_ != targetPhase)) {
-    if (!hasNextAction()) {
+  while (r_turnIndex < targetTurnIndex || (r_turnIndex == targetTurnIndex && r_state.phase() != targetPhase)) {
+    if (!stepForward()) {
       break;
     }
-
-    if (phase_ == ReplayPhase:: Move) {
-      applyCurrentMove();
-      phase_ = ReplayPhase::Break;
-    }
-
-    else if (phase_ == ReplayPhase::Break) {
-      applyCurrentBreak();
-      turnIndex_++;
-      phase_ = (turnIndex_ < static_cast<int>(history_.size())) ? ReplayPhase::Move : ReplayPhase::Finished;
-    }
   }
+}
+
+void ReplaySession::updateVisualState() {
+  r_visualState.currentTurn = r_turnIndex;
+  r_visualState.totalTurn = r_history.size();
+  r_visualState.canStepForward = hasNextAction();
+  r_visualState.canStepBackward = hasPreviousAction();
+  r_visualState.isAutoPlaying = r_autoPlayActive;
+}
+
+void ReplaySession::setAutoPlay(bool active) {
+  r_autoPlayActive = active;
+  r_autoPlayCounter = 0; //reset counter
+}
+
+void ReplaySession::setAutoPlayDelay(int ticks) {
+  r_autoPlayDelayTicks = ticks;
+}
+
+bool ReplaySession::isAutoPlayActive() const {
+  return r_autoPlayActive;
+}
+
+void ReplaySession::toggleAutoPlay() {
+  setAutoPlay(!r_autoPlayActive);
 }
