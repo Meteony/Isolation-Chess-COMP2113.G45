@@ -1,0 +1,3 @@
+*.o
+manual_curses_match
+test_main_menu
