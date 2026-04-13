@@ -1,3 +1,4 @@
+/*
 #pragma once
 #include "core/enums.hpp"
 
@@ -34,4 +35,27 @@ private:
 
     // draws the difficulty selection submenu
     void drawDifficultyMenu();
+};
+*/
+
+#pragma once
+#include "ui/scene.hpp"
+#include "core/enums.hpp"
+
+class MainMenuScene : public Scene
+{
+public:
+    MainMenuScene();
+
+    void handleInput(App &app, int ch) override;
+    void update(App &app) override;
+    void render(App &app) override;
+
+private:
+    int m_selectedOption = 0; // 0=HvH, 1=HvAI, 2=Quit
+    bool m_inDifficultyMenu = false;
+    int m_selectedDifficulty = 0; // 0=Easy,1=Medium,2=Hard,3=Back
+
+    void drawMainMenu() const;
+    void drawDifficultyMenu() const;
 };

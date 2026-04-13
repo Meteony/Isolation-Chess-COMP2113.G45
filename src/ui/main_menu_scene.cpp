@@ -1,3 +1,4 @@
+/*
 #include "ui/main_menu_scene.hpp"
 #include <ncurses.h>
 #include <string>
@@ -224,6 +225,202 @@ void MainMenuScene::drawDifficultyMenu() {
 
     // ---- hint ----
     std::string hint = "Arrow keys / WASD to navigate, Enter to select, ESC to go back";
+    int hintCol = (maxX - (int)hint.length()) / 2;
+    mvaddstr(titleRow + 9, hintCol, hint.c_str());
+}
+*/
+
+#include "ui/main_menu_scene.hpp"
+#include "app/app.hpp"
+
+#include <ncurses.h>
+#include <string>
+#include <vector>
+
+MainMenuScene::MainMenuScene() = default;
+
+void MainMenuScene::handleInput(App &app, int ch)
+{
+    if (ch == ERR)
+        return;
+
+    // Quick quit
+    if (!m_inDifficultyMenu && (ch == 'q' || ch == 'Q'))
+    {
+        app.requestQuit();
+        return;
+    }
+
+    if (!m_inDifficultyMenu)
+    {
+        switch (ch)
+        {
+        case KEY_UP:
+        case 'w':
+        case 'W':
+            if (m_selectedOption > 0)
+                m_selectedOption--;
+            break;
+
+        case KEY_DOWN:
+        case 's':
+        case 'S':
+            if (m_selectedOption < 2)
+                m_selectedOption++;
+            break;
+
+        case '\n':
+        case '\r':
+        case KEY_ENTER:
+        case 'c':
+        case 'C':
+            if (m_selectedOption == 0)
+            {
+                app.startNewHumanGame();
+            }
+            else if (m_selectedOption == 1)
+            {
+                m_inDifficultyMenu = true;
+                m_selectedDifficulty = 0;
+            }
+            else
+            {
+                app.requestQuit();
+            }
+            break;
+        }
+    }
+    else
+    {
+        switch (ch)
+        {
+        case KEY_UP:
+        case 'w':
+        case 'W':
+            if (m_selectedDifficulty > 0)
+                m_selectedDifficulty--;
+            break;
+
+        case KEY_DOWN:
+        case 's':
+        case 'S':
+            if (m_selectedDifficulty < 3)
+                m_selectedDifficulty++;
+            break;
+
+        case 27: // ESC
+        case 'x':
+        case 'X':
+            m_inDifficultyMenu = false;
+            break;
+
+        case '\n':
+        case '\r':
+        case KEY_ENTER:
+        case 'c':
+        case 'C':
+            if (m_selectedDifficulty == 3)
+            {
+                m_inDifficultyMenu = false;
+            }
+            else
+            {
+                AiDifficulty diff =
+                    (m_selectedDifficulty == 0) ? AiDifficulty::Easy : (m_selectedDifficulty == 1) ? AiDifficulty::Medium
+                                                                                                   : AiDifficulty::Hard;
+
+                app.startNewAiGame(diff);
+            }
+            break;
+        }
+    }
+}
+
+void MainMenuScene::update(App &app)
+{
+    (void)app;
+}
+
+void MainMenuScene::render(App &app)
+{
+    (void)app;
+    erase();
+    if (m_inDifficultyMenu)
+        drawDifficultyMenu();
+    else
+        drawMainMenu();
+    refresh();
+}
+
+void MainMenuScene::drawMainMenu() const
+{
+    int maxY, maxX;
+    getmaxyx(stdscr, maxY, maxX);
+
+    std::string title = "=== ISOLATION CHESS ===";
+    int titleRow = maxY / 2 - 5;
+    int titleCol = (maxX - (int)title.length()) / 2;
+
+    attron(A_BOLD);
+    mvaddstr(titleRow, titleCol, title.c_str());
+    attroff(A_BOLD);
+
+    std::vector<std::string> options = {
+        "Human vs Human",
+        "Human vs AI",
+        "Quit"};
+
+    for (int i = 0; i < (int)options.size(); i++)
+    {
+        int row = titleRow + 3 + i;
+        std::string label = (i == m_selectedOption ? "> " : "  ") + options[i];
+        int col = (maxX - (int)label.length()) / 2;
+
+        if (i == m_selectedOption)
+            attron(A_REVERSE);
+        mvaddstr(row, col, label.c_str());
+        if (i == m_selectedOption)
+            attroff(A_REVERSE);
+    }
+
+    std::string hint = "Arrow keys / WASD, Enter to select, Q to quit";
+    int hintCol = (maxX - (int)hint.length()) / 2;
+    mvaddstr(titleRow + 8, hintCol, hint.c_str());
+}
+
+void MainMenuScene::drawDifficultyMenu() const
+{
+    int maxY, maxX;
+    getmaxyx(stdscr, maxY, maxX);
+
+    std::string title = "=== SELECT AI DIFFICULTY ===";
+    int titleRow = maxY / 2 - 5;
+    int titleCol = (maxX - (int)title.length()) / 2;
+
+    attron(A_BOLD);
+    mvaddstr(titleRow, titleCol, title.c_str());
+    attroff(A_BOLD);
+
+    std::vector<std::string> options = {
+        "Easy",
+        "Medium",
+        "Hard",
+        "Back"};
+
+    for (int i = 0; i < (int)options.size(); i++)
+    {
+        int row = titleRow + 3 + i;
+        std::string label = (i == m_selectedDifficulty ? "> " : "  ") + options[i];
+        int col = (maxX - (int)label.length()) / 2;
+
+        if (i == m_selectedDifficulty)
+            attron(A_REVERSE);
+        mvaddstr(row, col, label.c_str());
+        if (i == m_selectedDifficulty)
+            attroff(A_REVERSE);
+    }
+
+    std::string hint = "Arrow keys / WASD, Enter to select, ESC to go back";
     int hintCol = (maxX - (int)hint.length()) / 2;
     mvaddstr(titleRow + 9, hintCol, hint.c_str());
 }

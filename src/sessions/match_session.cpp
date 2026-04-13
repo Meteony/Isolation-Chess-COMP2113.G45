@@ -3,7 +3,7 @@
 #include "core/game_rules.hpp"
 
 // Initialization Constructor
-MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2)
+MatchSession::MatchSession(int rows, int cols, Player *p1, Player *p2)
     : m_initialState(rows, cols),
       m_state(rows, cols),
       m_visualState{},
@@ -21,148 +21,205 @@ MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2)
 }
 
 // Destructor
-MatchSession::~MatchSession() {
-    delete m_p1;
-    delete m_p2;
-}
+MatchSession::~MatchSession() = default;
 
-const Player& MatchSession::currentPlayer() const {
+const Player &MatchSession::currentPlayer() const
+{
     return (m_state.sideToMove() == Side::Player1) ? *m_p1 : *m_p2;
 }
 
-static Side otherSide(Side side) {
+static Side otherSide(Side side)
+{
     return (side == Side::Player1) ? Side::Player2 : Side::Player1;
 }
 
-void MatchSession::update(int inputChar){
-    ++m_gameTick;
-
-    Player& player{currentPlayer()};
-
-    // Update UI element  
-    if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
-        m_visualState.cursorVisible = true;
-        m_visualState.cursor = human->cursor();
-    } else {
-        m_visualState.cursorVisible = false;
-    }
-
-    if (m_state.status() == SessionStatus::Finished) {
-         m_visualState.cursorVisible = false;
+static void syncVisualStateFromCurrentPlayer(MatchVisualState &vs, const GameState &state, Player &player)
+{
+    if (state.status() == SessionStatus::Finished)
+    {
+        vs.cursorVisible = false;
         return;
     }
-    
 
-    switch (m_state.phase()) {
-        case TurnPhase::NewTurn: {
-            m_currentTurnRecord.reset(m_state.sideToMove());
+    if (auto *human = dynamic_cast<HumanPlayer *>(&player))
+    {
+        vs.cursorVisible = true;
+        vs.cursor = human->cursor();
+    }
+    else
+    {
+        vs.cursorVisible = false;
+    }
+}
 
-            // negative-start trick: later do += m_gameTick
-            m_currentTurnRecord.thinkTicksBeforeMove = -m_gameTick;
+void MatchSession::update(int inputChar)
+{
+    ++m_gameTick;
 
-            m_state.setPhase(TurnPhase::Move);
-            player.beginMovePhase(m_state);
+    Player &player{currentPlayer()};
+
+    auto syncVisual = [&]()
+    {
+        // If the game is finished, hide cursor.
+        if (m_state.status() == SessionStatus::Finished || m_state.phase() == TurnPhase::Finished)
+        {
+            m_visualState.cursorVisible = false;
             return;
         }
 
-        case TurnPhase::Move: {
-            
-            player.update(inputChar, m_state);
+        // Show cursor only for a human player, and copy its current cursor position.
+        if (auto *human = dynamic_cast<HumanPlayer *>(&player))
+        {
+            m_visualState.cursorVisible = true;
+            m_visualState.cursor = human->cursor();
+        }
+        else
+        {
+            m_visualState.cursorVisible = false;
+        }
+    };
 
-            if (!player.hasMoveReady()) {
-                return;
-            }
+    if (m_state.status() == SessionStatus::Finished)
+    {
+        m_visualState.cursorVisible = false;
+        return;
+    }
 
-            Coord move = player.consumeMove();
+    switch (m_state.phase())
+    {
+    case TurnPhase::NewTurn:
+    {
+        m_currentTurnRecord.reset(m_state.sideToMove());
 
-            if (!GameRules::isLegalMove(m_state, m_state.sideToMove(), move)) {
-                return;
-            }
+        // negative-start trick: later do += m_gameTick
+        m_currentTurnRecord.thinkTicksBeforeMove = -m_gameTick;
 
-            GameRules::applyMove(m_state, m_state.sideToMove(), move);
+        m_state.setPhase(TurnPhase::Move);
+        player.beginMovePhase(m_state);
 
-            m_currentTurnRecord.moveCoord = move;
-            m_currentTurnRecord.thinkTicksBeforeMove += m_gameTick;
+        syncVisual();
+        return;
+    }
 
-            // begin timing break phase now
-            m_currentTurnRecord.thinkTicksBeforeBreak = -m_gameTick;
+    case TurnPhase::Move:
+    {
+        player.update(inputChar, m_state);
 
-            player.beginBreakPhase(m_state);
-            m_state.setPhase(TurnPhase::Break);
+        if (!player.hasMoveReady())
+        {
+            syncVisual();
             return;
         }
 
-        case TurnPhase::Break: {
-            player.update(inputChar, m_state);
+        Coord move = player.consumeMove();
 
-            if (!player.hasBreakReady()) {
-                return;
-            }
-
-            Coord breakTile = player.consumeBreak();
-
-            if (!GameRules::isLegalBreak(m_state, breakTile)) {
-                return;
-            }
-
-            GameRules::applyBreak(m_state, breakTile);
-
-            m_currentTurnRecord.breakCoord = breakTile;
-            m_currentTurnRecord.thinkTicksBeforeBreak += m_gameTick;
-
-            pushHistory(m_currentTurnRecord);
-
-            Side nextSide = otherSide(m_state.sideToMove());
-
-            if (!GameRules::hasAnyLegalMove(m_state, nextSide)) {
-                m_state.setWinner(m_state.sideToMove());
-                m_state.setStatus(SessionStatus::Finished);
-                return;
-            }
-
-            m_state.setSideToMove(nextSide);
-            m_state.setPhase(TurnPhase::NewTurn);
+        if (!GameRules::isLegalMove(m_state, m_state.sideToMove(), move))
+        {
+            syncVisual();
             return;
         }
-        
-        case TurnPhase::Finished: {
+
+        GameRules::applyMove(m_state, m_state.sideToMove(), move);
+
+        m_currentTurnRecord.moveCoord = move;
+        m_currentTurnRecord.thinkTicksBeforeMove += m_gameTick;
+
+        // begin timing break phase now
+        m_currentTurnRecord.thinkTicksBeforeBreak = -m_gameTick;
+
+        player.beginBreakPhase(m_state);
+        m_state.setPhase(TurnPhase::Break);
+
+        syncVisual();
+        return;
+    }
+
+    case TurnPhase::Break:
+    {
+        player.update(inputChar, m_state);
+
+        if (!player.hasBreakReady())
+        {
+            syncVisual();
             return;
         }
-    }    
 
+        Coord breakTile = player.consumeBreak();
 
+        if (!GameRules::isLegalBreak(m_state, breakTile))
+        {
+            syncVisual();
+            return;
+        }
 
+        GameRules::applyBreak(m_state, breakTile);
+
+        m_currentTurnRecord.breakCoord = breakTile;
+        m_currentTurnRecord.thinkTicksBeforeBreak += m_gameTick;
+
+        pushHistory(m_currentTurnRecord);
+
+        Side nextSide = otherSide(m_state.sideToMove());
+
+        if (!GameRules::hasAnyLegalMove(m_state, nextSide))
+        {
+            m_state.setWinner(m_state.sideToMove());
+            m_state.setStatus(SessionStatus::Finished);
+
+            syncVisual();
+            return;
+        }
+
+        m_state.setSideToMove(nextSide);
+        m_state.setPhase(TurnPhase::NewTurn);
+
+        syncVisual();
+        return;
+    }
+
+    case TurnPhase::Finished:
+    {
+        m_visualState.cursorVisible = false;
+        return;
+    }
+    }
+
+    // Fallback (shouldn't happen)
+    syncVisual();
 }
 
 // Return current player ptr
-Player& MatchSession::currentPlayer() {
+Player &MatchSession::currentPlayer()
+{
     return (m_state.sideToMove() == Side::Player1) ? *m_p1 : *m_p2;
 }
 
-void MatchSession::pushHistory(const TurnRecord& record) {
+void MatchSession::pushHistory(const TurnRecord &record)
+{
     m_history.push_back(record);
 }
 
-const MatchVisualState& MatchSession::visualState() const {
+const MatchVisualState &MatchSession::visualState() const
+{
     return m_visualState;
 };
 
-ReplayData MatchSession::buildReplayData() const {
+ReplayData MatchSession::buildReplayData() const
+{
     return ReplayData{m_initialState, m_history};
 }
 
-const GameState& MatchSession::state() const {
+const GameState &MatchSession::state() const
+{
     return m_state;
 }
 
-TurnPhase MatchSession::phase() const {
+TurnPhase MatchSession::phase() const
+{
     return m_state.phase();
 }
 
-bool MatchSession::isFinished() const {
+bool MatchSession::isFinished() const
+{
     return m_state.status() == SessionStatus::Finished;
 }
-
-
-
-
