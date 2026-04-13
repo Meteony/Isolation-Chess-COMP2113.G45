@@ -4,7 +4,8 @@
 
 // Initialization Constructor
 MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2)
-    : m_state(rows, cols),
+    : m_initialState(rows, cols),
+      m_state(rows, cols),
       m_visualState{},
       m_p1(p1),
       m_p2(p2),
@@ -12,9 +13,11 @@ MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2)
       m_history{},
       m_currentTurnRecord{}
 {
-    m_state.setSideToMove(Side::Player1);
-    m_state.setPhase(TurnPhase::NewTurn);
-    m_state.setStatus(SessionStatus::Running);
+    m_initialState.setSideToMove(Side::Player1);
+    m_initialState.setPhase(TurnPhase::NewTurn);
+    m_initialState.setStatus(SessionStatus::Running);
+
+    m_state = m_initialState;
 }
 
 // Destructor
@@ -122,6 +125,9 @@ void MatchSession::update(int inputChar){
             return;
         }
         
+        case TurnPhase::Finished: {
+            return;
+        }
     }    
 
 
@@ -141,9 +147,8 @@ const MatchVisualState& MatchSession::visualState() const {
     return m_visualState;
 };
 
-
-const std::vector<TurnRecord>& MatchSession::history() const {
-    return m_history;
+ReplayData MatchSession::buildReplayData() const {
+    return ReplayData{m_initialState, m_history};
 }
 
 const GameState& MatchSession::state() const {

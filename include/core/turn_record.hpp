@@ -13,7 +13,7 @@ struct TurnRecord {
         actor = newActor;
         moveCoord = Coord{};
         breakCoord = Coord{};
-        long thinkTicksBeforeMove = 0;
-        long thinkTicksBeforeBreak = 0;
+        thinkTicksBeforeMove = 0;
+        thinkTicksBeforeBreak = 0;
     }
 };

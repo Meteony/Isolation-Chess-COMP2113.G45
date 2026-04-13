@@ -3,6 +3,7 @@
 #include "core/game_state.hpp"
 #include "players/player.hpp"
 #include "core/turn_record.hpp"
+#include "core/replay_data.hpp"
 
 // Misc HUD elements that aren't in GameState by themselves
 struct MatchVisualState {
@@ -12,16 +13,19 @@ struct MatchVisualState {
 
 class MatchSession {
 private:
+    GameState m_initialState;
     GameState m_state;
+
+    MatchVisualState m_visualState;
+
     Player* m_p1;
     Player* m_p2;
+    
+    int m_gameTick = 0;
 
     std::vector<TurnRecord> m_history;
     TurnRecord m_currentTurnRecord{};
 
-    MatchVisualState m_visualState;
-
-    int m_gameTick = 0;
 
 private:
     Player& currentPlayer();
@@ -41,7 +45,7 @@ public:
     const GameState& state() const;
     TurnPhase phase() const;
 
-    const std::vector<TurnRecord>& history() const;
+    ReplayData buildReplayData() const;
 
     const MatchVisualState& visualState() const;
 

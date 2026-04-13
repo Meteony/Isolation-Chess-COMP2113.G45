@@ -37,19 +37,27 @@ static std::vector<Coord> getLegalBreaks(const GameState& state) {
 }
 
 AiPlayer::AiPlayer(AiDifficulty difficulty, Side side)
-    : m_difficulty(difficulty), m_side(side), m_moveReady(false), m_breakReady(false) {
+    : m_difficulty(difficulty), m_side(side), m_moveReady(false), m_breakReady(false), m_ticksUntilReady(0) {
     std::srand(std::time(nullptr));
 }
 
 void AiPlayer::beginMovePhase(const GameState& state) {
     m_moveReady = false;
+    m_ticksUntilReady = 6 + (std::rand() % 9); // 6..14
 }
+
 
 void AiPlayer::beginBreakPhase(const GameState& state) {
     m_breakReady = false;
+    m_ticksUntilReady = 6 + (std::rand() % 9); // 6..14
 }
 
 void AiPlayer::update(int ch, const GameState& state) {
+    if (m_ticksUntilReady > 0) {
+        --m_ticksUntilReady;
+        return;
+    }
+    
     if (state.phase() == TurnPhase::Move && !m_moveReady) {
         if (m_difficulty == AiDifficulty::Easy) m_nextMove = findRandomMove(state);
         else if (m_difficulty == AiDifficulty::Medium) m_nextMove = findGreedyMove(state, true);

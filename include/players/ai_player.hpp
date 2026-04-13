@@ -26,10 +26,14 @@ public:
 private:
     AiDifficulty m_difficulty;
     Side m_side;
+
     bool m_moveReady = false;
     bool m_breakReady = false;
+
     Coord m_nextMove;
     Coord m_nextBreak;
+
+    int m_ticksUntilReady = 0;
 
     Coord findGreedyMove(const GameState &state, bool isMove);
     Coord findMinimaxMove(const GameState &state, bool isMove);

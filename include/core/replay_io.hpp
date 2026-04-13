@@ -1,31 +1,16 @@
 #pragma once
+#include <optional>
 #include <string>
-#include <vector>
-#include "game_state.hpp"
-#include "turn_record.hpp"
 
-class ReplayIO
-{
-public:
-    struct ReplayData
-    {
-        int rows;
-        int cols;
-        GameState initialState;
-        std::vector<TurnRecord> history;
-    };
+#include "replay_data.hpp"
 
-    static bool saveReplay(int rows,
-                          int cols,
-                          const GameState& initialState,
-                          const std::vector<TurnRecord>& history,
-                          std::string& outFilename);
+class ReplayIO {
+ public:
+  static bool saveReplay(const ReplayData& data, std::string& outFilename);
+  static std::optional<ReplayData> loadReplay(const std::string& filepath);
 
-    static bool loadReplay(const std::string& filepath,
-                          ReplayData& outData);
-
-private:
-    static const std::string REPLAY_DIR;
-    static bool ensureDirectoryExists();
-    static std::string generateFilename();
+ private:
+  static const std::string REPLAY_DIR;
+  static bool ensureDirectoryExists();
+  static std::string generateFilename();
 };

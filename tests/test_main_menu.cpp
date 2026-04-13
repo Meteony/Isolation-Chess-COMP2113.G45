@@ -1,9 +1,11 @@
 #include <ncurses.h>
+#include <iostream>
 #include "ui/main_menu_scene.hpp"
 #include "players/human_player.hpp"
 #include "players/ai_player.hpp"
 #include "sessions/match_session.hpp"
 #include "core/enums.hpp"
+#include "core/replay_io.hpp"
 
 // borrowed from manual_curses_match.cpp
 static const char* phaseName(TurnPhase p) {
@@ -85,7 +87,7 @@ int main() {
 
     bool running = true;
     while (running) {
-        timeout(100);
+        timeout(100);   
         int ch = getch();
 
         if (ch == 'q' || ch == 'Q') {
@@ -99,8 +101,12 @@ int main() {
         drawBoard(session);
         refresh();
     }
-
+    
+    auto replayData = session.buildReplayData();
+    std::string name = "I don't get it the name isn't respected anyways";
+    bool ok = ReplayIO::saveReplay(replayData, name);
     endwin();
+    std::cout << (ok ? "Replay saved\n" : "Error saving replay\n");
     return 0;
 }
 
