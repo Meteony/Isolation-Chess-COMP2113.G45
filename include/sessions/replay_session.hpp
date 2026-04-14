@@ -12,6 +12,8 @@ struct ReplayVisualState { //ui element
   bool canStepForward = false;
   bool canStepBackward = false;
   bool isAutoPlaying = false;
+  long currentTurnThinkTime = 0; //in ticks
+  float playbackSpeed = 1.0f; //for display purposes, shows current playback speed
 };
 
 class ReplaySession {
@@ -24,10 +26,12 @@ private:
   
   ReplayVisualState r_visualState;
 
-  //auto-play state
+  //auto-play state & timing
   bool r_autoPlayActive = false;
-  int r_autoPlayDelayTicks = 30;
+  int r_defaultAutoPlayDelay = 30; //fallback delay ticks
   int r_autoPlayCounter = 0;
+  long r_autoPlayTargetDelay = 0;
+  float r_playbackSpeed = 1.0f; //1.0 = normal speed, <1.0 = slower, >1.0 = faster
 
 private:
   //helper methods
@@ -38,9 +42,11 @@ private:
   bool stepForward(); //applies next action, false if none available
   bool stepBackward(); //undo last action, false if none available
   void replayToState(size_t targetTurnIndex, TurnPhase targetPhase); //replay from initial state to given state
-  void toggleAutoPlay();
   void applyCurrentMove();
   void applyCurrentBreak();
+
+  void toggleAutoPlay();
+  long calculateAutoPlayDelay() const; //calculate delay based on current turn's think times and playback speed 
 
 public:
   ReplaySession(const GameState& initialState, const std::vector<TurnRecord>& history);
@@ -57,4 +63,5 @@ public:
   void setAutoPlay(bool active);
   void setAutoPlayDelay(int ticks);
   bool isAutoPlayActive() const;
+  void setPlaybackSpeed(float speed);
 };

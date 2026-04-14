@@ -38,10 +38,12 @@ void ReplaySession::update (int inputChar) {
       break;
   }
 
+  r_autoPlayTargetDelay = calculateAutoPlayDelay(); //update target delay based on current turn's think times and playback speed
+
   //autoplay tick tracking
   if (r_autoPlayActive && !isFinished()) {
     r_autoPlayCounter++;
-    if (r_autoPlayCounter >= r_autoPlayDelayTicks) {
+    if (r_autoPlayCounter >= r_autoPlayTargetDelay) {
       r_autoPlayCounter = 0;
       if (!stepForward()) { //reached end
         setAutoPlay(false);
@@ -190,6 +192,24 @@ void ReplaySession::updateVisualState() {
   r_visualState.canStepForward = hasNextAction();
   r_visualState.canStepBackward = hasPreviousAction();
   r_visualState.isAutoPlaying = r_autoPlayActive;
+  r_visualState.playbackSpeed = r_playbackSpeed;
+  if (r_turnIndex < r_history.size()) {
+    const TurnRecord& currentTurn = r_history[r_turnIndex];
+    if (r_state.phase() == TurnPhase::Move) {
+      r_visualState.currentTurnThinkTime = currentTurn.thinkTicksBeforeMove;
+    } 
+    
+    else if (r_state.phase() == TurnPhase::Break) {
+      r_visualState.currentTurnThinkTime = currentTurn.thinkTicksBeforeBreak;
+    } 
+    
+    else {
+      r_visualState.currentTurnThinkTime = 0;
+    }
+  } 
+  else {
+    r_visualState.currentTurnThinkTime = 0;
+  }
 }
 
 void ReplaySession::setAutoPlay(bool active) {
@@ -197,8 +217,36 @@ void ReplaySession::setAutoPlay(bool active) {
   r_autoPlayCounter = 0; //reset counter
 }
 
-void ReplaySession::setAutoPlayDelay(int ticks) {
-  r_autoPlayDelayTicks = ticks;
+long ReplaySession::calculateAutoPlayDelay() const {
+  if (r_history.empty() || r_turnIndex >= r_history.size()) {
+    return r_defaultAutoPlayDelay; //empty history or end of history, use default delay
+  }
+
+  const TurnRecord& currentTurn = r_history[r_turnIndex];
+  long baseDelay = 0;
+  if (r_state.phase() == TurnPhase::Move) {
+    baseDelay = currentTurn.thinkTicksBeforeMove;
+  } 
+  
+  else if (r_state.phase() == TurnPhase::Break) {
+    baseDelay = currentTurn.thinkTicksBeforeBreak;
+  }
+
+  else {
+    baseDelay = r_defaultAutoPlayDelay; //for NewTurn or Finished phases, use default delay
+  }
+  
+  long adjustedDelay = static_cast<long>(baseDelay / r_playbackSpeed);
+  return adjustedDelay > 0 ? adjustedDelay : r_defaultAutoPlayDelay; //ensure positive delay, fallback to default if adjusted delay is zero or negative
+}
+
+void ReplaySession::setAutoPlayDelay(int ticks) { //for manually setting delay (not currently used)
+  r_autoPlayTargetDelay = ticks;
+}
+
+void ReplaySession::setPlaybackSpeed(float speed) {
+  r_playbackSpeed = speed > 0 ? speed : 1.0f; //ensure positive speed, fallback to normal if invalid
+  r_autoPlayTargetDelay = calculateAutoPlayDelay(); //recalculate target delay based on new playback speed
 }
 
 bool ReplaySession::isAutoPlayActive() const {
