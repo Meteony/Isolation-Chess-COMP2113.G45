@@ -125,9 +125,6 @@ void MatchSession::update(int inputChar){
             return;
         }
         
-        case TurnPhase::Finished: {
-            return;
-        }
     }    
 
 

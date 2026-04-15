@@ -71,13 +71,12 @@ const ReplayVisualState& ReplaySession::visualState() const {
 }
 
 bool ReplaySession::isFinished() const {
-  return r_state.phase() == TurnPhase::Finished;
+  return r_state.status() == SessionStatus::Finished;
 }
 
 void ReplaySession::reset() {
   r_state = r_initialState;
   r_turnIndex = 0;
-  r_state.setPhase( r_history.empty() ? TurnPhase::Finished : TurnPhase::NewTurn );
   updateVisualState();
 }
 
@@ -93,7 +92,7 @@ void ReplaySession::applyCurrentBreak() {
   GameRules::applyBreak(r_state, turn.breakCoord);
 }
 
-bool ReplaySession::hasNextAction() const {
+bool ReplaySession::currentTurnValid() const {
   if (isFinished() || r_turnIndex >= r_history.size()) { 
     return false;
   }
@@ -112,29 +111,41 @@ bool ReplaySession::hasPreviousAction() const {
 }
 
 bool ReplaySession::stepForward() {
-  if (!hasNextAction()) { //return false if no next action
+    if (!currentTurnValid()) {
+        return false;
+    }
+
+    const TurnRecord& curTurn = r_history[r_turnIndex];
+    r_state.setSideToMove(curTurn.actor);
+
+    if (r_state.phase() == TurnPhase::NewTurn) {
+        r_state.setPhase(TurnPhase::Move);
+        return true;
+    }
+
+    if (r_state.phase() == TurnPhase::Move) {
+        applyCurrentMove();
+        r_state.setPhase(TurnPhase::Break);
+        return true;
+    }
+
+    if (r_state.phase() == TurnPhase::Break) {
+        applyCurrentBreak();
+
+        bool hasAnotherTurn = (r_turnIndex + 1 < r_history.size());
+        if (!hasAnotherTurn){
+          r_state.setStatus(SessionStatus::Finished);
+          r_state.setWinner(r_state.sideToMove());
+          setAutoPlay(false);
+          return true;
+        }
+
+        ++r_turnIndex;
+        r_state.setPhase(TurnPhase::NewTurn);
+        return true;
+    }
+
     return false;
-  }
-  
-  if (r_state.phase() == TurnPhase::NewTurn) {
-    r_state.setPhase(TurnPhase::Move);
-    return true;
-  }
-
-  else if (r_state.phase() == TurnPhase::Move) { //apply the move
-    applyCurrentMove();
-    r_state.setPhase(TurnPhase::Break);
-    return true;
-  }
-
-  else if (r_state.phase() == TurnPhase::Break) {
-    applyCurrentBreak();
-    ++r_turnIndex;
-    r_state.setPhase((r_turnIndex < r_history.size()) ? TurnPhase::NewTurn : TurnPhase::Finished);
-    return true;
-  }
-  
-  return false;
 }
 
 bool ReplaySession::stepBackward() {
@@ -145,7 +156,13 @@ bool ReplaySession::stepBackward() {
   size_t targetTurn = r_turnIndex;
   TurnPhase targetPhase = r_state.phase();
 
-  if (r_state.phase() == TurnPhase::NewTurn) { //go to break phase of previous turn
+  if (isFinished()) {
+    assert(!r_history.empty() && "ReplaySession::stepBackward: empty r_history");
+    targetTurn = r_history.size() - 1;
+    targetPhase = TurnPhase::Break;
+  }
+
+  else if (r_state.phase() == TurnPhase::NewTurn) { //go to break phase of previous turn
     if (r_turnIndex == 0) { //no previous turn
       return false;
     }
@@ -161,14 +178,6 @@ bool ReplaySession::stepBackward() {
   else if (r_state.phase() == TurnPhase::Break) { //go back to move phase of same turn
     targetPhase = TurnPhase::Move;
     //targetTurn stays the same
-  }
-
-  else { //ReplayPhase::Finished
-    if (r_history.empty()) {
-      return false;
-    }
-    targetTurn = r_history.size() - 1;
-    targetPhase = TurnPhase::Break;
   }
 
   replayToState(targetTurn, targetPhase);
@@ -189,7 +198,7 @@ void ReplaySession::replayToState(size_t targetTurnIndex, TurnPhase targetPhase)
 void ReplaySession::updateVisualState() {
   r_visualState.currentTurn = r_turnIndex;
   r_visualState.totalTurn = r_history.size();
-  r_visualState.canStepForward = hasNextAction();
+  r_visualState.canStepForward = currentTurnValid();
   r_visualState.canStepBackward = hasPreviousAction();
   r_visualState.isAutoPlaying = r_autoPlayActive;
   r_visualState.playbackSpeed = r_playbackSpeed;

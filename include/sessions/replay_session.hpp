@@ -37,7 +37,7 @@ private:
   //helper methods
   void updateVisualState();
   void reset(); //reset replay to beginning
-  bool hasNextAction() const;
+  bool currentTurnValid() const;
   bool hasPreviousAction() const;
   bool stepForward(); //applies next action, false if none available
   bool stepBackward(); //undo last action, false if none available

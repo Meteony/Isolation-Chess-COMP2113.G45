@@ -14,7 +14,6 @@ enum class TurnPhase {
     NewTurn,
     Move,
     Break,
-    Finished
 };
 
 enum class SessionStatus {
