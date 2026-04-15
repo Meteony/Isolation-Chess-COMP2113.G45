@@ -21,3 +21,11 @@ test_main_menu: \
     src/ui/main_menu_scene.cpp \
     tests/test_main_menu.cpp
 	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o test_main_menu
+
+test_replay_match: \
+    src/core/game_state.cpp \
+	src/core/game_rules.cpp \
+    src/core/replay_io.cpp \
+	src/sessions/replay_session.cpp \
+	tests/test_replay_match.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o test_replay_session
