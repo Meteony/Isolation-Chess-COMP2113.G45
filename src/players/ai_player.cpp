@@ -160,3 +160,144 @@ void AiPlayer::update(int ch, const GameState& state) {
   }
 }
 
+Coord AiPlayer::chooseAction(const GameState& state, bool isMove) {
+  if (legalMoveCount(state, m_side) < 2) {
+    return findMinimaxMove(state, isMove);
+  }
+
+  StrategyWeights weights = adjustedWeights(state, m_difficulty, m_turnCount);
+  Strategy strategy = chooseStrategy(weights, m_rng);
+
+  switch (strategy) {
+    case Strategy::Random:
+      return isMove ? findRandomMove(state) : findRandomBreak(state);
+    case Strategy::Greedy:
+      return findGreedyMove(state, isMove);
+    case Strategy::Minimax:
+      return findMinimaxMove(state, isMove);
+  }
+
+  return findMinimaxMove(state, isMove);
+}
+
+Coord AiPlayer::findRandomMove(const GameState& state) {
+  auto moves = getLegalMoves(state, m_side);
+  if (moves.empty()) return state.playerPos(m_side);
+  std::uniform_int_distribution<size_t> dist(0, moves.size() - 1);
+  return moves[dist(m_rng)];
+}
+
+Coord AiPlayer::findRandomBreak(const GameState& state) {
+  auto breaks = getLegalBreaks(state);
+  if (breaks.empty()) return {0, 0};
+  std::uniform_int_distribution<size_t> dist(0, breaks.size() - 1);
+  return breaks[dist(m_rng)];
+}
+
+Coord AiPlayer::findGreedyMove(const GameState& state, bool isMove) {
+  if (isMove) {
+    auto moves = getLegalMoves(state, m_side);
+    Coord best = moves.empty() ? state.playerPos(m_side) : moves[0];
+    int maxMobility = -1;
+    for (auto& m : moves) {
+      GameState sim = state;
+      sim.setPlayerPos(m_side, m);
+      int mobility = getLegalMoves(sim, m_side).size();
+      if (mobility > maxMobility) {
+        maxMobility = mobility;
+        best = m;
+      }
+    }
+    return best;
+  } else {
+    auto breaks = getLegalBreaks(state);
+    if (breaks.empty()) return {0, 0};
+
+    Coord best = breaks[0];
+    int bestMobility = -1;
+    for (const auto& tile : breaks) {
+      GameState sim = state;
+      sim.setTile(tile, TileState::Broken);
+      int mobility = legalMoveCount(sim, m_side);
+      if (mobility > bestMobility) {
+        bestMobility = mobility;
+        best = tile;
+      }
+    }
+    return best;
+  }
+}
+
+int AiPlayer::evaluate(const GameState& state) {
+  int myMoves = getLegalMoves(state, m_side).size();
+  Side opponent = (m_side == Side::Player1) ? Side::Player2 : Side::Player1;
+  int oppMoves = getLegalMoves(state, opponent).size();
+  return myMoves - oppMoves;
+}
+
+int AiPlayer::minimax(GameState state, int depth, bool isMaximizing, int alpha,
+                      int beta) {
+  if (depth == 0 || getLegalMoves(state, Side::Player1).empty() ||
+      getLegalMoves(state, Side::Player2).empty()) {
+    return evaluate(state);
+  }
+
+  if (isMaximizing) {
+    int maxEval = INT_MIN;
+    for (auto& m : getLegalMoves(state, m_side)) {
+      GameState sim = state;
+      sim.setPlayerPos(m_side, m);
+      int eval = minimax(sim, depth - 1, false, alpha, beta);
+      maxEval = std::max(maxEval, eval);
+      alpha = std::max(alpha, eval);
+      if (beta <= alpha) break;
+    }
+    return maxEval;
+  } else {
+    int minEval = INT_MAX;
+    Side opp = (m_side == Side::Player1) ? Side::Player2 : Side::Player1;
+    for (auto& m : getLegalMoves(state, opp)) {
+      GameState sim = state;
+      sim.setPlayerPos(opp, m);
+      int eval = minimax(sim, depth - 1, true, alpha, beta);
+      minEval = std::min(minEval, eval);
+      beta = std::min(beta, eval);
+      if (beta <= alpha) break;
+    }
+    return minEval;
+  }
+}
+
+Coord AiPlayer::findMinimaxMove(const GameState& state, bool isMove) {
+  if (!isMove) {
+    auto breaks = getLegalBreaks(state);
+    Coord bestBreak = breaks.empty() ? Coord{0, 0} : breaks[0];
+    int bestVal = INT_MIN;
+
+    for (const auto& tile : breaks) {
+      GameState sim = state;
+      sim.setTile(tile, TileState::Broken);
+      int breakVal = minimax(sim, 3, false, INT_MIN, INT_MAX);
+      if (breakVal > bestVal) {
+        bestVal = breakVal;
+        bestBreak = tile;
+      }
+    }
+    return bestBreak;
+  }
+
+  auto moves = getLegalMoves(state, m_side);
+  Coord bestMove = moves.empty() ? state.playerPos(m_side) : moves[0];
+  int bestVal = INT_MIN;
+
+  for (const auto& m : moves) {
+    GameState sim = state;
+    sim.setPlayerPos(m_side, m);
+    int moveVal = minimax(sim, 3, false, INT_MIN, INT_MAX);
+    if (moveVal > bestVal) {
+      bestVal = moveVal;
+      bestMove = m;
+    }
+  }
+  return bestMove;
+}
