@@ -41,9 +41,13 @@ class AiPlayer : public Player {
   Coord m_nextBreak;
 
   int m_ticksUntilReady = 0;
+  int m_turnCount = 0;
+
+  std::mt19937 m_rng;
 
   Coord findGreedyMove(const GameState& state, bool isMove);
   Coord findMinimaxMove(const GameState& state, bool isMove);
+  Coord chooseAction(const GameState& state, bool isMove);
 
   int evaluate(const GameState& state);
   int minimax(GameState state, int depth, bool isMaximizing, int alpha,

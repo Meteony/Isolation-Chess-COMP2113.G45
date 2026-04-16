@@ -12,8 +12,6 @@ class HumanPlayer : public Player {
   bool m_breakReady = false;
   bool m_hasSelectedMove = false;
 
-  TurnPhase m_phase = TurnPhase::Move;
-
  public:
   HumanPlayer();
   ~HumanPlayer() override = default;
