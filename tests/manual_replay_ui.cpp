@@ -9,6 +9,7 @@
 #include "sessions/replay_session.hpp"
 #include "ui/board_renderer.hpp"
 #include "ui/game_hud.hpp"
+#include "ui/ui_resize_helper.hpp"
 
 enum class FocusTarget { Game, Hud };
 
@@ -36,18 +37,19 @@ int main(int argc, char** argv) {
   ReplaySession replay(replayData->initialState, replayData->history);
 
   BoardRenderer board;
-  board.moveTo(0, 0);
-  board.resize(20, 47);
-
   GameHud hud;
-  hud.moveTo(0, 48);
-  hud.resize(20, 24);
 
   FocusTarget focus = FocusTarget::Game;
   bool running = true;
 
+  relayoutGameScene(board, hud);
+
   while (running) {
     const int ch = getch();
+
+    if (ch == KEY_RESIZE) {
+      relayoutGameScene(board, hud);
+    }
 
     if (ch == '\t' || ch == '\x1b') {
       focus =

@@ -217,21 +217,6 @@ std::string padOrTrimRight(const std::string& s, int width) {
   }
   return s + std::string(width - s.size(), ' ');
 }
-/*
-std::vector<std::string> wrapMessage(const std::string& s, int width) {
-  std::vector<std::string> out;
-  if (width <= 0) return out;
-  if (s.empty()) {
-    out.push_back("");
-    return out;
-  }
-
-  for (size_t i = 0; i < s.size(); i += static_cast<size_t>(width)) {
-    out.push_back(s.substr(i, static_cast<size_t>(width)));
-  }
-  return out;
-}
-*/
 }  // namespace
 
 void GameHud::drawFrame(bool winFocused) {
@@ -405,7 +390,7 @@ void GameHud::drawHUD(const ReplaySession& session) {
 
 void GameHud::resize(int rows, int cols) {
   const int minRows = 7 + 3 + 3;  // replay HUD + min log + command
-  m_size.row = std::max(minRows, rows);
+  m_size.row = std::max(minRows, rows - rows % 2);
   m_size.col = std::max(24, cols);
 }
 

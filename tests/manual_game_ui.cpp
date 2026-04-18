@@ -1,5 +1,6 @@
 #include <ncurses.h>
 
+#include <algorithm>
 #include <clocale>
 #include <optional>
 #include <string>
@@ -10,6 +11,7 @@
 #include "sessions/match_session.hpp"
 #include "ui/board_renderer.hpp"
 #include "ui/game_hud.hpp"
+#include "ui/ui_resize_helper.hpp"
 
 enum class FocusTarget { Game, Hud };
 
@@ -26,13 +28,18 @@ int main() {
   MatchSession session(9, 11, new HumanPlayer(),
                        new AiPlayer(AiDifficulty::Medium, Side::Player2));
 
-  BoardRenderer board;
-  board.moveTo(0, 0);
-  board.resize(20, 48);
+  constexpr int kBoardMaxRows = 20;
+  constexpr int kBoardMaxCols = 48;
+  constexpr int kHudMaxRows = 20;
+  constexpr int kHudCols = 24;
 
+  constexpr int kBoardStepRows = 2;
+  constexpr int kBoardStepCols = 4;
+
+  BoardRenderer board;
   GameHud hud;
-  hud.moveTo(0, 48);
-  hud.resize(20, 24);
+
+  relayoutGameScene(board, hud);
 
   session.postUiMessage("P1: Ready.");
   session.postUiMessage("<MAGENTA> Goto: Turn 120");
@@ -44,12 +51,10 @@ int main() {
   bool running = true;
   while (running) {
     const int ch = getch();
-    /*
-    if (ch == 'q' || ch == 'Q') {
-      running = false;
-      continue;
+
+    if (ch == KEY_RESIZE) {
+      relayoutGameScene(board, hud);
     }
-      */
 
     // Tab/Esc switches focus between Game and HUD.
     if (ch == '\t' || ch == '\x1b') {
