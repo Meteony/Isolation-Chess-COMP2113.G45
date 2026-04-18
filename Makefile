@@ -70,7 +70,7 @@ manual_game_ui: \
 	src/ui/game_hud.cpp \
 	tests/manual_game_ui.cpp
 	$(CXX) $(CXXFLAGS) -Iinclude $^ \
-		-lncursesw \
+		-lncurses \
 		-o manual_game_ui
 
 

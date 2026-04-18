@@ -115,9 +115,24 @@ int legalMoveCount(const GameState& state, Side side) {
   return static_cast<int>(getLegalMoves(state, side).size());
 }
 
+Side oppositeSide(Side side) {
+  return (side == Side::Player1) ? Side::Player2 : Side::Player1;
+}
+
 int randomThinkTicks(std::mt19937& rng) {
   // Main loop ticks at ~100ms, so 3-10 ticks approximates 300-1000ms.
   return std::uniform_int_distribution<int>(3, 10)(rng);
+}
+
+int minimaxDepth(const GameState& state, AiDifficulty difficulty) {
+  if (difficulty != AiDifficulty::Hard) {
+    return 3;
+  }
+
+  int totalTiles = state.rows() * state.cols();
+  int intactTiles = countIntactTiles(state);
+  bool isEndgame = (intactTiles * 100) < (totalTiles * 40);
+  return isEndgame ? 4 : 3;
 }
 
 }  // namespace
@@ -214,13 +229,18 @@ Coord AiPlayer::findGreedyMove(const GameState& state, bool isMove) {
     if (breaks.empty()) return {0, 0};
 
     Coord best = breaks[0];
-    int bestMobility = -1;
+    int bestOppMobility = INT_MAX;
+    int bestSelfMobility = -1;
+    Side opp = oppositeSide(m_side);
     for (const auto& tile : breaks) {
       GameState sim = state;
       sim.setTile(tile, TileState::Broken);
-      int mobility = legalMoveCount(sim, m_side);
-      if (mobility > bestMobility) {
-        bestMobility = mobility;
+      int oppMobility = legalMoveCount(sim, opp);
+      int selfMobility = legalMoveCount(sim, m_side);
+      if (oppMobility < bestOppMobility ||
+          (oppMobility == bestOppMobility && selfMobility > bestSelfMobility)) {
+        bestOppMobility = oppMobility;
+        bestSelfMobility = selfMobility;
         best = tile;
       }
     }
@@ -235,40 +255,83 @@ int AiPlayer::evaluate(const GameState& state) {
   return myMoves - oppMoves;
 }
 
-int AiPlayer::minimax(GameState state, int depth, bool isMaximizing, int alpha,
-                      int beta) {
-  if (depth == 0 || getLegalMoves(state, Side::Player1).empty() ||
-      getLegalMoves(state, Side::Player2).empty()) {
+int AiPlayer::minimax(GameState state, int depth, Side actor, TurnPhase phase,
+                      int alpha, int beta) {
+  if (depth == 0) {
     return evaluate(state);
   }
 
-  if (isMaximizing) {
-    int maxEval = INT_MIN;
-    for (auto& m : getLegalMoves(state, m_side)) {
-      GameState sim = state;
-      sim.setPlayerPos(m_side, m);
-      int eval = minimax(sim, depth - 1, false, alpha, beta);
-      maxEval = std::max(maxEval, eval);
-      alpha = std::max(alpha, eval);
-      if (beta <= alpha) break;
+  bool isMaximizing = (actor == m_side);
+
+  if (phase == TurnPhase::Move) {
+    auto moves = getLegalMoves(state, actor);
+    if (moves.empty()) {
+      // If the actor cannot move, that side loses immediately.
+      return isMaximizing ? -10000 : 10000;
     }
-    return maxEval;
-  } else {
+
+    if (isMaximizing) {
+      int maxEval = INT_MIN;
+      for (const auto& m : moves) {
+        GameState sim = state;
+        sim.setPlayerPos(actor, m);
+        int eval =
+            minimax(sim, depth - 1, actor, TurnPhase::Break, alpha, beta);
+        maxEval = std::max(maxEval, eval);
+        alpha = std::max(alpha, eval);
+        if (beta <= alpha) break;
+      }
+      return maxEval;
+    }
+
     int minEval = INT_MAX;
-    Side opp = (m_side == Side::Player1) ? Side::Player2 : Side::Player1;
-    for (auto& m : getLegalMoves(state, opp)) {
+    for (const auto& m : moves) {
       GameState sim = state;
-      sim.setPlayerPos(opp, m);
-      int eval = minimax(sim, depth - 1, true, alpha, beta);
+      sim.setPlayerPos(actor, m);
+      int eval = minimax(sim, depth - 1, actor, TurnPhase::Break, alpha, beta);
       minEval = std::min(minEval, eval);
       beta = std::min(beta, eval);
       if (beta <= alpha) break;
     }
     return minEval;
   }
+
+  auto breaks = getLegalBreaks(state);
+  if (breaks.empty()) {
+    return evaluate(state);
+  }
+
+  Side nextActor = oppositeSide(actor);
+  if (isMaximizing) {
+    int maxEval = INT_MIN;
+    for (const auto& tile : breaks) {
+      GameState sim = state;
+      sim.setTile(tile, TileState::Broken);
+      int eval =
+          minimax(sim, depth - 1, nextActor, TurnPhase::Move, alpha, beta);
+      maxEval = std::max(maxEval, eval);
+      alpha = std::max(alpha, eval);
+      if (beta <= alpha) break;
+    }
+    return maxEval;
+  }
+
+  int minEval = INT_MAX;
+  for (const auto& tile : breaks) {
+    GameState sim = state;
+    sim.setTile(tile, TileState::Broken);
+    int eval = minimax(sim, depth - 1, nextActor, TurnPhase::Move, alpha, beta);
+    minEval = std::min(minEval, eval);
+    beta = std::min(beta, eval);
+    if (beta <= alpha) break;
+  }
+  return minEval;
 }
 
 Coord AiPlayer::findMinimaxMove(const GameState& state, bool isMove) {
+  Side opp = oppositeSide(m_side);
+  int searchDepth = minimaxDepth(state, m_difficulty);
+
   if (!isMove) {
     auto breaks = getLegalBreaks(state);
     Coord bestBreak = breaks.empty() ? Coord{0, 0} : breaks[0];
@@ -277,7 +340,8 @@ Coord AiPlayer::findMinimaxMove(const GameState& state, bool isMove) {
     for (const auto& tile : breaks) {
       GameState sim = state;
       sim.setTile(tile, TileState::Broken);
-      int breakVal = minimax(sim, 3, false, INT_MIN, INT_MAX);
+      int breakVal =
+          minimax(sim, searchDepth, opp, TurnPhase::Move, INT_MIN, INT_MAX);
       if (breakVal > bestVal) {
         bestVal = breakVal;
         bestBreak = tile;
@@ -293,7 +357,8 @@ Coord AiPlayer::findMinimaxMove(const GameState& state, bool isMove) {
   for (const auto& m : moves) {
     GameState sim = state;
     sim.setPlayerPos(m_side, m);
-    int moveVal = minimax(sim, 3, false, INT_MIN, INT_MAX);
+    int moveVal =
+        minimax(sim, searchDepth, m_side, TurnPhase::Break, INT_MIN, INT_MAX);
     if (moveVal > bestVal) {
       bestVal = moveVal;
       bestMove = m;
