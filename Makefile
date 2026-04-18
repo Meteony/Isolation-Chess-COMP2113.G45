@@ -22,6 +22,21 @@ test_main_menu: \
     tests/test_main_menu.cpp
 	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o test_main_menu
 
+run_app: \
+    src/core/game_state.cpp \
+    src/core/game_rules.cpp \
+    src/core/replay_io.cpp \
+    src/players/human_player.cpp \
+    src/players/ai_player.cpp \
+    src/sessions/match_session.cpp \
+    src/ui/board_renderer.cpp \
+    src/ui/live_game_scene.cpp \
+    src/ui/replay_scene.cpp \
+    src/ui/main_menu_scene.cpp \
+    src/app/app.cpp \
+    src/main.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o run_app
+
 test_replay_match: \
     src/core/game_state.cpp \
 	src/core/game_rules.cpp \
