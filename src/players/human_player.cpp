@@ -59,25 +59,21 @@ void HumanPlayer::update(int ch, const GameState& state) {
   Coord next = m_cursor;
 
   switch (ch) {
-    case KEY_UP:
     case 'w':
     case 'W':
       --next.row;
       break;
 
-    case KEY_DOWN:
     case 's':
     case 'S':
       ++next.row;
       break;
 
-    case KEY_LEFT:
     case 'a':
     case 'A':
       --next.col;
       break;
 
-    case KEY_RIGHT:
     case 'd':
     case 'D':
       ++next.col;

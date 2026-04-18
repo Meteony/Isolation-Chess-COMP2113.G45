@@ -1,5 +1,7 @@
 #include "sessions/match_session.hpp"
 
+#include <string>
+
 #include "core/game_rules.hpp"
 #include "players/human_player.hpp"
 
@@ -82,6 +84,19 @@ void MatchSession::update(int inputChar) {
       m_currentTurnRecord.moveCoord = move;
       m_currentTurnRecord.thinkTicksBeforeMove += m_gameTick;
 
+      /*Post messages*/
+      const long moveTicks = m_currentTurnRecord.thinkTicksBeforeMove;
+      const std::string moveSeconds =
+          (moveTicks % 10 == 0) ? std::to_string(moveTicks / 10) + "s"
+                                : std::to_string(moveTicks / 10) + "." +
+                                      std::to_string(moveTicks % 10) + "s";
+      postUiMessage(((m_state.sideToMove() == Side::Player1) ? "<BLUE>P1: "
+                                                             : "<RED>P2: ") +
+                    std::string("Moved to <YELLOW>(") +
+                    std::to_string(move.row) + ", <YELLOW>" +
+                    std::to_string(move.col) + ") in <YELLOW>" + moveSeconds +
+                    ".");
+
       // begin timing break phase now
       m_currentTurnRecord.thinkTicksBeforeBreak = -m_gameTick;
 
@@ -107,6 +122,20 @@ void MatchSession::update(int inputChar) {
 
       m_currentTurnRecord.breakCoord = breakTile;
       m_currentTurnRecord.thinkTicksBeforeBreak += m_gameTick;
+
+      /*Post messages*/
+      const long breakTicks = m_currentTurnRecord.thinkTicksBeforeBreak;
+      const std::string breakSeconds =
+          (breakTicks % 10 == 0) ? std::to_string(breakTicks / 10) + "s"
+                                 : std::to_string(breakTicks / 10) + "." +
+                                       std::to_string(breakTicks % 10) + "s";
+
+      postUiMessage(((m_state.sideToMove() == Side::Player1) ? "<BLUE>P1: "
+                                                             : "<RED>P2: ") +
+                    std::string("Broke <YELLOW>(") +
+                    std::to_string(breakTile.row) + ", <YELLOW>" +
+                    std::to_string(breakTile.col) + ") in <YELLOW>" +
+                    breakSeconds + ".");
 
       pushHistory(m_currentTurnRecord);
 

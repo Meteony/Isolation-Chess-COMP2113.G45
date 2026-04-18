@@ -89,6 +89,49 @@ void drawPieceAt(const Coord& winPos, const Coord& boardOffset,
   drawGlyphBlock(row, col, "▛▀▀▜", "▙▄▄▟", colorPair, true);
 }
 
+/*Draw those 2x1 triangles to indicate map getting cut off*/
+void drawOverflowMarkers(const Coord& winPos, const Coord& size,
+                         const Coord& boardOffset, const GameState& state) {
+  const int visibleRows = std::max(1, (size.row - 2) / kTileRows);
+  const int visibleCols = std::max(1, (size.col - 2 - kLeftPad) / kTileCols);
+
+  const bool hiddenUp = boardOffset.row > 0;
+  const bool hiddenDown = boardOffset.row + visibleRows < state.rows();
+  const bool hiddenLeft = boardOffset.col > 0;
+  const bool hiddenRight = boardOffset.col + visibleCols < state.cols();
+
+  const int midRow = winPos.row + size.row / 2 - 1;
+  const int midCol = winPos.col + size.col / 2 - 1;
+
+  // attron(COLOR_PAIR(CP_FRAME_FOCUSED) | A_BOLD);
+
+  // Left: 1x2 marker
+  if (hiddenLeft) {
+    mvaddstr(midRow, winPos.col + 1, "◢");
+    mvaddstr(midRow + 1, winPos.col + 1, "◥");
+  }
+
+  // Right: 1x2 marker
+  if (hiddenRight) {
+    mvaddstr(midRow, winPos.col + size.col - 3, "◣");
+    mvaddstr(midRow + 1, winPos.col + size.col - 3, "◤");
+  }
+
+  // Up: 2x1 marker
+  if (hiddenUp) {
+    mvaddstr(winPos.row + 1, midCol, "◢");
+    mvaddstr(winPos.row + 1, midCol + 1, "◣");
+  }
+
+  // Down: 2x1 marker
+  if (hiddenDown) {
+    mvaddstr(winPos.row + size.row - 2, midCol, "◥");
+    mvaddstr(winPos.row + size.row - 2, midCol + 1, "◤");
+  }
+
+  // attroff(COLOR_PAIR(CP_FRAME_FOCUSED) | A_BOLD);
+}
+
 // Clamp board scrolling so the visible region stays within the board.
 void clampOffset(Coord& boardOffset, const Coord& size,
                  const GameState& state) {
@@ -166,15 +209,19 @@ void BoardRenderer::overlayMiscElements(const ReplayVisualState& visualState) {
 void BoardRenderer::scrollBoard(int key) {
   switch (key) {
     case 'H':
+    case KEY_LEFT:
       --m_boardOffset.col;
       break;
     case 'L':
+    case KEY_RIGHT:
       ++m_boardOffset.col;
       break;
     case 'K':
+    case KEY_UP:
       --m_boardOffset.row;
       break;
     case 'J':
+    case KEY_DOWN:
       ++m_boardOffset.row;
       break;
     default:
@@ -224,7 +271,7 @@ void BoardRenderer::render(int key, bool winFocused,
   }
 
   drawPieces(state);
-
+  drawOverflowMarkers(m_winPos, m_size, m_boardOffset, state);
   overlayMiscElements(visual);
 }
 
@@ -241,5 +288,6 @@ void BoardRenderer::render(int key, bool winFocused,
   drawFrame(winFocused);
   drawBoard(state);
   drawPieces(state);
+  drawOverflowMarkers(m_winPos, m_size, m_boardOffset, state);
   overlayMiscElements(visual);
 }

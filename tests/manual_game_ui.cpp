@@ -24,11 +24,11 @@ int main() {
   timeout(100);
 
   MatchSession session(9, 11, new HumanPlayer(),
-                       new AiPlayer(AiDifficulty::Hard, Side::Player2));
+                       new AiPlayer(AiDifficulty::Easy, Side::Player2));
 
   BoardRenderer board;
   board.moveTo(0, 0);
-  board.resize(20, 47);
+  board.resize(20, 48);
 
   GameHud hud;
   hud.moveTo(0, 48);
