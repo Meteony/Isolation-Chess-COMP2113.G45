@@ -1,9 +1,10 @@
 #include "sessions/match_session.hpp"
 
-#include <string>
+#include <sstream>
 
 #include "core/game_rules.hpp"
 #include "core/time.hpp"
+#include "players/ai_player.hpp"
 #include "players/human_player.hpp"
 
 /* Initialization Constructor. Names optional */
@@ -44,6 +45,108 @@ static Side otherSide(Side side) {
   return (side == Side::Player1) ? Side::Player2 : Side::Player1;
 }
 
+static int legalMoveCount(const GameState& state, Side side) {
+  int count = 0;
+  const Coord pos = state.playerPos(side);
+  for (int r = pos.row - 1; r <= pos.row + 1; ++r) {
+    for (int c = pos.col - 1; c <= pos.col + 1; ++c) {
+      if (GameRules::isLegalMove(state, side, {r, c})) {
+        ++count;
+      }
+    }
+  }
+  return count;
+}
+
+static bool isAiPlayer(const Player& player) {
+  return dynamic_cast<const AiPlayer*>(&player) != nullptr;
+}
+
+static std::string colorizeAiSpeech(const std::string& text) {
+  std::istringstream iss(text);
+  std::ostringstream oss;
+  std::string word;
+  bool first = true;
+
+  while (iss >> word) {
+    if (!first) {
+      oss << ' ';
+    }
+    oss << "<MAGENTA>" << word;
+    first = false;
+  }
+
+  return first ? std::string{"<MAGENTA>AI:"} : oss.str();
+}
+
+static std::string aiReactionForPosition(const GameState& state, Side aiSide,
+                                         int gameTick) {
+  const Side opponent = otherSide(aiSide);
+  const int oppMoves = legalMoveCount(state, opponent);
+  const int selfMoves = legalMoveCount(state, aiSide);
+
+  if (oppMoves == 0) {
+    return "AI: ez";
+  }
+
+  if (oppMoves <= 1 && selfMoves >= 2) {
+    return "AI: one move left";
+  }
+
+  if (selfMoves <= 1 && oppMoves >= 3) {
+    return "AI: wait...";
+  }
+
+  switch ((gameTick / 9) % 22) {
+    case 0:
+      return "AI: your turn";
+    case 1:
+      return "AI: still easy";
+    case 2:
+      return "AI: Who carried you to this level?";
+    case 3:
+      return "AI: My grandma plays better than you in wheelchair ngl";
+    case 4:
+      return "AI: nice try";
+    case 5:
+      return "AI: mid tbh";
+    case 6:
+      return "AI: pressure on";
+    case 7:
+      return "AI: Nice try, I guess...";
+    case 8:
+      return "AI: good defense";
+    case 9:
+      return "AI: that's interesting";
+    case 10:
+      return "AI: readable pattern";
+    case 11:
+      return "AI: I could win this with my eyes closed";
+    case 12:
+      return "AI: edge secured";
+    case 13:
+      return "AI: keep it coming";
+    case 14:
+      return "AI: calculation check";
+    case 15:
+      return "AI: that was a free square";
+    case 16:
+      return "AI: bold move, wrong board";
+    case 17:
+      return "AI: you walked into that";
+    case 18:
+      return "AI: too slow on the switch";
+    case 19:
+      return "AI: that's a rough line";
+    case 20:
+      return "AI: I saw that coming";
+    case 21:
+      return "AI: Kinda retarded tbh";
+    default:
+      return "AI: absolute clown move";
+  }
+}
+
 void MatchSession::update(int inputChar) {
   ++m_gameTick;
 
@@ -69,9 +172,17 @@ void MatchSession::update(int inputChar) {
                                                    playerName(side);
   };
 
+  // Update UI element
+  if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
+    m_visualState.cursorVisible = true;
+    m_visualState.cursor = human->cursor();
+  } else {
+    m_visualState.cursorVisible = false;
+  }
+
   if (m_state.status() == SessionStatus::Finished) {
     m_visualState.cursorVisible = false;
-    goto UpdateAndReturn;
+    return;
   }
 
   switch (m_state.phase()) {
@@ -97,13 +208,13 @@ void MatchSession::update(int inputChar) {
       player.update(inputChar, m_state);
 
       if (!player.hasMoveReady()) {
-        goto UpdateAndReturn;
+        return;
       }
 
       Coord move = player.consumeMove();
 
       if (!GameRules::isLegalMove(m_state, m_state.sideToMove(), move)) {
-        goto UpdateAndReturn;
+        return;
       }
 
       GameRules::applyMove(m_state, m_state.sideToMove(), move);
@@ -111,45 +222,44 @@ void MatchSession::update(int inputChar) {
       m_currentTurnRecord.moveCoord = move;
       m_currentTurnRecord.thinkTicksBeforeMove += m_gameTick;
 
-      /*Post messages*/ /*Well feels a bit too much I'm removing this message*/
-      /*
-      const long moveTicks = m_currentTurnRecord.thinkTicksBeforeMove;
-      const std::string moveSeconds =
-          (moveTicks % 10 == 0) ? std::to_string(moveTicks / 10) + "s"
-                                : std::to_string(moveTicks / 10) + "." +
-                                      std::to_string(moveTicks % 10) + "s";
-      postUiMessage(((m_state.sideToMove() == Side::Player1) ? "<BLUE>P1: "
-                                                             : "<RED>P2: ") +
-                    std::string("Moved to <YELLOW>(") +
-                    std::to_string(move.row) + ", <YELLOW>" +
-                    std::to_string(move.col) + ") in <YELLOW>" + moveSeconds +
-                    ".");
-      */
+      if (isAiPlayer(player)) {
+        const Side aiSide = m_state.sideToMove();
+        const int selfMoves = legalMoveCount(m_state, aiSide);
+        if (selfMoves <= 2) {
+          postUiMessage(colorizeAiSpeech("AI: locked in"));
+        }
+      }
+
       // begin timing break phase now
       m_currentTurnRecord.thinkTicksBeforeBreak = -m_gameTick;
 
       player.beginBreakPhase(m_state);
       m_state.setPhase(TurnPhase::Break);
-      goto UpdateAndReturn;
+      return;
     }
 
     case TurnPhase::Break: {
       player.update(inputChar, m_state);
 
       if (!player.hasBreakReady()) {
-        goto UpdateAndReturn;
+        return;
       }
 
       Coord breakTile = player.consumeBreak();
 
       if (!GameRules::isLegalBreak(m_state, breakTile)) {
-        goto UpdateAndReturn;
+        return;
       }
 
       GameRules::applyBreak(m_state, breakTile);
 
       m_currentTurnRecord.breakCoord = breakTile;
       m_currentTurnRecord.thinkTicksBeforeBreak += m_gameTick;
+
+      if (isAiPlayer(player)) {
+        postUiMessage(colorizeAiSpeech(
+            aiReactionForPosition(m_state, m_state.sideToMove(), m_gameTick)));
+      }
 
       /*Post messages*/
       const Side actor = m_state.sideToMove();
@@ -162,14 +272,18 @@ void MatchSession::update(int inputChar) {
 
       Side nextSide = otherSide(m_state.sideToMove());
 
-      const Side winner = !GameRules::hasAnyLegalMove(m_state, nextSide)
-                              ? m_state.sideToMove()
-                              : nextSide;
-
-      if (!GameRules::hasAnyLegalMove(m_state, nextSide) ||
-          !GameRules::hasAnyLegalMove(m_state, m_state.sideToMove())) {
-        m_state.setWinner(winner);
+      if (!GameRules::hasAnyLegalMove(m_state, nextSide)) {
+        m_state.setWinner(m_state.sideToMove());
         m_state.setStatus(SessionStatus::Finished);
+
+        if (isAiPlayer(player)) {
+          postUiMessage(colorizeAiSpeech("AI: ez"));
+        } else {
+          Player& loser = (nextSide == Side::Player1) ? *m_p1 : *m_p2;
+          if (isAiPlayer(loser)) {
+            postUiMessage(colorizeAiSpeech("AI: gg"));
+          }
+        }
         postUiMessage(std::string("<YELLOW>Result: ") +
                       coloredPlayerName(winner) + std::string(" wins."));
         goto UpdateAndReturn;
@@ -177,19 +291,9 @@ void MatchSession::update(int inputChar) {
 
       m_state.setSideToMove(nextSide);
       m_state.setPhase(TurnPhase::NewTurn);
-      goto UpdateAndReturn;
+      return;
     }
   }
-
-UpdateAndReturn:
-  // Update UI element
-  if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
-    m_visualState.cursorVisible = true;
-    m_visualState.cursor = human->cursor();
-  } else {
-    m_visualState.cursorVisible = false;
-  }
-  return;
 }
 
 // Return current player ptr
