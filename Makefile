@@ -87,3 +87,17 @@ manual_replay_ui: \
 	$(CXX) $(CXXFLAGS) -Iinclude $^ \
 		-lncursesw \
 		-o manual_replay_ui
+
+netplay: \
+	src/core/game_state.cpp \
+	src/core/game_rules.cpp \
+	src/core/replay_io.cpp \
+	src/players/human_player.cpp \
+	src/sessions/match_session.cpp \
+	src/sessions/replay_session.cpp \
+	src/ui/board_renderer.cpp \
+	src/ui/game_hud.cpp \
+	tests/netplay.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude $^ \
+		-lncursesw \
+		-o netplay
