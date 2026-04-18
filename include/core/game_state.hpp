@@ -5,7 +5,7 @@
 #include "enums.hpp"
 
 /*
- Stores the complete board and turn state 
+ Stores the complete board and turn state
  at a given instant.
 */
 
@@ -18,10 +18,10 @@ class GameState {
   Coord m_p1Pos;
   Coord m_p2Pos;
 
-  Side m_sideToMove;      // Which player acts next.
-  TurnPhase m_phase;      // Current phase within the turn.
-  SessionStatus m_status; // Ongoing / finished state of the session.
-  Side m_winner;          // Set only when status is Finished.
+  Side m_sideToMove;       // Which player acts next.
+  TurnPhase m_phase;       // Current phase within the turn.
+  SessionStatus m_status;  // Ongoing / finished state of the session.
+  Side m_winner;           // Set only when status is Finished.
 
  public:
   // Creates a board with the given dimensions.

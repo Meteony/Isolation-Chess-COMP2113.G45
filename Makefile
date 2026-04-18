@@ -29,3 +29,15 @@ test_replay_match: \
 	src/sessions/replay_session.cpp \
 	tests/test_replay_match.cpp
 	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o test_replay_session
+
+manual_board_renderer: \
+    src/core/game_state.cpp \
+    src/core/game_rules.cpp \
+    src/players/human_player.cpp \
+    src/sessions/match_session.cpp \
+    src/sessions/replay_session.cpp\
+    src/ui/board_renderer.cpp \
+    tests/manual_board_renderer.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude $^ \
+        -lncursesw \
+		-o manual_board_renderer
