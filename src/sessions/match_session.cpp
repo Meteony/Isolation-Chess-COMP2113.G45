@@ -141,9 +141,17 @@ void MatchSession::update(int inputChar) {
 
       Side nextSide = otherSide(m_state.sideToMove());
 
-      if (!GameRules::hasAnyLegalMove(m_state, nextSide)) {
-        m_state.setWinner(m_state.sideToMove());
+      const Side winner = !GameRules::hasAnyLegalMove(m_state, nextSide)
+                              ? m_state.sideToMove()
+                              : nextSide;
+
+      if (!GameRules::hasAnyLegalMove(m_state, nextSide) ||
+          !GameRules::hasAnyLegalMove(m_state, m_state.sideToMove())) {
+        m_state.setWinner(winner);
         m_state.setStatus(SessionStatus::Finished);
+        postUiMessage(std::string("<MAGENTA>Result: ") +
+                      ((winner == Side::Player1) ? "<BLUE>P1 " : "<RED>P2 ") +
+                      std::string("Wins."));
         return;
       }
 
