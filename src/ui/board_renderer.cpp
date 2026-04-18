@@ -23,8 +23,6 @@ const char *BoardRenderer::phaseName(TurnPhase p) const
         return "Move";
     case TurnPhase::Break:
         return "Break";
-    case TurnPhase::Finished:
-        return "Finished";
     }
     return "?";
 }

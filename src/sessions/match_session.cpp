@@ -21,7 +21,11 @@ MatchSession::MatchSession(int rows, int cols, Player *p1, Player *p2)
 }
 
 // Destructor
-MatchSession::~MatchSession() = default;
+MatchSession::~MatchSession()
+{
+    delete m_p1;
+    delete m_p2;
+}
 
 const Player &MatchSession::currentPlayer() const
 {
@@ -33,25 +37,6 @@ static Side otherSide(Side side)
     return (side == Side::Player1) ? Side::Player2 : Side::Player1;
 }
 
-static void syncVisualStateFromCurrentPlayer(MatchVisualState &vs, const GameState &state, Player &player)
-{
-    if (state.status() == SessionStatus::Finished)
-    {
-        vs.cursorVisible = false;
-        return;
-    }
-
-    if (auto *human = dynamic_cast<HumanPlayer *>(&player))
-    {
-        vs.cursorVisible = true;
-        vs.cursor = human->cursor();
-    }
-    else
-    {
-        vs.cursorVisible = false;
-    }
-}
-
 void MatchSession::update(int inputChar)
 {
     ++m_gameTick;
@@ -61,7 +46,7 @@ void MatchSession::update(int inputChar)
     auto syncVisual = [&]()
     {
         // If the game is finished, hide cursor.
-        if (m_state.status() == SessionStatus::Finished || m_state.phase() == TurnPhase::Finished)
+        if (m_state.status() == SessionStatus::Finished)
         {
             m_visualState.cursorVisible = false;
             return;
@@ -177,11 +162,6 @@ void MatchSession::update(int inputChar)
         return;
     }
 
-    case TurnPhase::Finished:
-    {
-        m_visualState.cursorVisible = false;
-        return;
-    }
     }
 
     // Fallback (shouldn't happen)

@@ -36,3 +36,11 @@ run_app: \
     src/app/app.cpp \
     src/main.cpp
 	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o run_app
+
+test_replay_match: \
+    src/core/game_state.cpp \
+	src/core/game_rules.cpp \
+    src/core/replay_io.cpp \
+	src/sessions/replay_session.cpp \
+	tests/test_replay_match.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude $^ -lncurses -o test_replay_session

@@ -384,15 +384,38 @@ If one member is noticeably stronger than the others, that person should act as 
 This order keeps dependencies sane and lets the team validate the core before adding higher-level UI and replay features.
 
 
-## 12. AI Difficulty Levels
+## 12. AI methods
 
 Add an `AiPlayer` to handle single-player matches. You can choose from three difficulty levels:
 
-### Easy
+### random
 The AI moves and breaks tiles completely at random. It’s mostly there to help new players get used to the mechanics and to satisfy our project's "random events" requirement.
 
-### Medium
+### greedy
 This version is a "Greedy" AI. Before making a move, it scans the board and picks the spot that gives it the most possible moves in the next turn. It's harder to trap, but it doesn't try to block you yet.
 
-### Hard
+### minimax
 The most challenging mode. It uses a **Minimax algorithm** with **Alpha-Beta pruning** to simulate multiple turns ahead. It doesn't just look for its own path--->it actively tries to cut you off while keeping its own options open.
+
+## 13. AI Difficulties
+
+For the AI part of this project, I didn't want the computer to just move randomly or be a perfect machine. I designed it to act more like a real player who makes mistakes sometimes but gets serious when the game gets tight.
+
+### 1. The Three AI Methods
+I wrote three different functions to handle how the computer chooses its move:
+* **Random Move**: The computer just picks any legal spot. This represents a "mistake" or a casual move.
+* **Greedy Move**: The computer looks at the board and picks the spot that leaves it with the most moving options for the next turn.
+* **Minimax Move**: This is the "smart" mode. It uses a search tree to find the best way to block the player and win.
+
+### 2. Difficulty Logic & Probability Table
+Instead of using just one method, the AI chooses which one to use based on probabilities. This makes the game feel more natural.
+
+| Difficulty | Random | Greedy | Minimax | Special Logic |
+| :--- | :--- | :--- | :--- | :--- |
+| **Easy** | 60% | 30% | 10% | Uses Minimax if AI has < 2 moves left. |
+| **Medium** | 20% | 50% | 30% | Minimax weight increases as the game progresses. |
+| **Hard** | 0% | 20% | 80% | Locks to 100% Minimax if board is 40% empty. |
+
+### 3. Human-like Behavior
+* **Thinking Delay**: The computer waits for a short moment (0.3s to 1s) before moving so it doesn't feel like a robot.
+* **Focus Level**: If you make a very strong move against the AI, it will increase its "Focus" and use the Minimax logic for the next turn to counter you.
