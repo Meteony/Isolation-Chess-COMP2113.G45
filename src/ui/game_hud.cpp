@@ -4,10 +4,171 @@
 
 #include <algorithm>
 #include <cctype>
+#include <string>
+#include <vector>
 
 #include "ui/ui_colors.hpp"
 
 namespace {
+
+struct ColoredWord {
+  std::string text;
+  int colorPair;  // 0 = default
+  bool newline;   // explicit line break
+};
+
+int messageTagToPair(const std::string& tag) {
+  if (tag == "BLACK") return CP_MSG_BLACK;
+  if (tag == "RED") return CP_MSG_RED;
+  if (tag == "GREEN") return CP_MSG_GREEN;
+  if (tag == "YELLOW") return CP_MSG_YELLOW;
+  if (tag == "BLUE") return CP_MSG_BLUE;
+  if (tag == "MAGENTA") return CP_MSG_MAGENTA;
+  if (tag == "CYAN") return CP_MSG_CYAN;
+  if (tag == "WHITE") return CP_MSG_WHITE;
+  return 0;
+}
+
+std::string toUpper(std::string s) {
+  for (char& ch : s) {
+    ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+  }
+  return s;
+}
+
+std::vector<ColoredWord> tokenizeMessage(const std::string& msg) {
+  std::vector<ColoredWord> out;
+  size_t i = 0;
+
+  while (i < msg.size()) {
+    if (msg[i] == '\n') {
+      out.push_back({"", 0, true});
+      ++i;
+      continue;
+    }
+
+    while (i < msg.size() && std::isspace(static_cast<unsigned char>(msg[i])) &&
+           msg[i] != '\n') {
+      ++i;
+    }
+
+    if (i >= msg.size()) break;
+
+    int pair = 0;
+
+    if (msg[i] == '<') {
+      size_t close = msg.find('>', i + 1);
+      if (close != std::string::npos) {
+        std::string tag = toUpper(msg.substr(i + 1, close - i - 1));
+        int parsedPair = messageTagToPair(tag);
+        if (parsedPair != 0) {
+          pair = parsedPair;
+          i = close + 1;
+
+          while (i < msg.size() &&
+                 std::isspace(static_cast<unsigned char>(msg[i])) &&
+                 msg[i] != '\n') {
+            ++i;
+          }
+        }
+      }
+    }
+
+    if (i >= msg.size()) break;
+    if (msg[i] == '\n') continue;
+
+    size_t start = i;
+    while (i < msg.size() &&
+           !std::isspace(static_cast<unsigned char>(msg[i]))) {
+      ++i;
+    }
+
+    if (start < i) {
+      out.push_back({msg.substr(start, i - start), pair, false});
+    }
+  }
+
+  return out;
+}
+
+std::vector<std::vector<ColoredWord>> wrapMessageWords(const std::string& msg,
+                                                       int width) {
+  std::vector<std::vector<ColoredWord>> rows;
+  rows.push_back({});
+
+  int currentWidth = 0;
+  auto words = tokenizeMessage(msg);
+
+  auto nextRow = [&]() {
+    rows.push_back({});
+    currentWidth = 0;
+  };
+
+  for (const auto& word : words) {
+    if (word.newline) {
+      nextRow();
+      continue;
+    }
+
+    std::string remaining = word.text;
+
+    while (!remaining.empty()) {
+      if (rows.back().empty()) {
+        int take = std::min(width, static_cast<int>(remaining.size()));
+        rows.back().push_back(
+            {remaining.substr(0, take), word.colorPair, false});
+        currentWidth = take;
+        remaining.erase(0, take);
+
+        if (!remaining.empty()) {
+          nextRow();
+        }
+      } else {
+        int needed = 1 + static_cast<int>(remaining.size());
+        if (currentWidth + needed <= width) {
+          rows.back().push_back({remaining, word.colorPair, false});
+          currentWidth += needed;
+          remaining.clear();
+        } else {
+          nextRow();
+        }
+      }
+    }
+  }
+
+  return rows;
+}
+
+void drawWordRow(int row, int col, const std::vector<ColoredWord>& words,
+                 int width) {
+  int x = 0;
+
+  attrset(A_NORMAL);
+
+  for (size_t i = 0; i < words.size() && x < width; ++i) {
+    if (i > 0 && x < width) {
+      mvaddch(row, col + x, ' ');
+      ++x;
+    }
+
+    if (words[i].colorPair != 0) {
+      attron(COLOR_PAIR(words[i].colorPair));
+    } else {
+      attrset(A_NORMAL);
+    }
+
+    int n = std::min(width - x, static_cast<int>(words[i].text.size()));
+    mvaddnstr(row, col + x, words[i].text.c_str(), n);
+    x += n;
+
+    attrset(A_NORMAL);
+  }
+
+  while (x < width) {
+    mvaddch(row, col + x, ' ');
+    ++x;
+  }
+}
 
 void drawText(int row, int col, const std::string& text, int colorPair = 0,
               bool bold = false) {
@@ -56,7 +217,7 @@ std::string padOrTrimRight(const std::string& s, int width) {
   }
   return s + std::string(width - s.size(), ' ');
 }
-
+/*
 std::vector<std::string> wrapMessage(const std::string& s, int width) {
   std::vector<std::string> out;
   if (width <= 0) return out;
@@ -70,6 +231,7 @@ std::vector<std::string> wrapMessage(const std::string& s, int width) {
   }
   return out;
 }
+*/
 }  // namespace
 
 void GameHud::drawFrame(bool winFocused) {
@@ -84,18 +246,20 @@ void GameHud::drawFrame(bool winFocused) {
 }
 
 void GameHud::drawMessages(const std::vector<std::string>& msgs) {
+  ensureUiColorsInitialized();
+
   const int innerWidth = m_size.col - 4;
   const int top = m_winPos.row + m_hudHeight;
   const int innerTop = top + 1;
   const int innerHeight = m_logHeight - 2;
 
-  std::vector<std::string> wrapped;
+  std::vector<std::vector<ColoredWord>> wrappedRows;
   for (const auto& msg : msgs) {
-    auto lines = wrapMessage(msg, innerWidth);
-    wrapped.insert(wrapped.end(), lines.begin(), lines.end());
+    auto rows = wrapMessageWords(msg, innerWidth);
+    wrappedRows.insert(wrappedRows.end(), rows.begin(), rows.end());
   }
 
-  const int totalLines = static_cast<int>(wrapped.size());
+  const int totalLines = static_cast<int>(wrappedRows.size());
   const int maxScroll = std::max(0, totalLines - innerHeight);
   linesOfLogScrolled = std::clamp(linesOfLogScrolled, 0, maxScroll);
 
@@ -106,11 +270,13 @@ void GameHud::drawMessages(const std::vector<std::string>& msgs) {
     const int idx = start + i;
 
     if (idx < totalLines) {
-      drawText(row, m_winPos.col + 2, padOrTrimRight(wrapped[idx], innerWidth));
+      drawWordRow(row, m_winPos.col + 2, wrappedRows[idx], innerWidth);
     } else {
-      drawText(row, m_winPos.col + 2, std::string(innerWidth, ' '));
+      drawWordRow(row, m_winPos.col + 2, {}, innerWidth);
     }
   }
+
+  attrset(A_NORMAL);
 }
 
 void GameHud::drawCommand(bool winFocused) {
@@ -126,23 +292,23 @@ void GameHud::drawCommand(bool winFocused) {
   }
 
   std::string visible = m_command;
-  if (static_cast<int>(visible.size()) > innerWidth) {
-    visible = visible.substr(visible.size() - static_cast<size_t>(innerWidth));
+  size_t viewStart = 0;
+
+  if (m_commandCursorPos >= static_cast<size_t>(innerWidth)) {
+    viewStart = m_commandCursorPos - static_cast<size_t>(innerWidth) + 1;
   }
 
+  visible = m_command.substr(viewStart, static_cast<size_t>(innerWidth));
   visible = padOrTrimRight(visible, innerWidth);
   drawText(innerRow, innerLeft, visible);
 
   m_flashOn = ((m_tick / 8) % 2 == 0);
-
   if (!m_flashOn) return;
 
-  int cursorCol = static_cast<int>(m_commandCursorPos);
-  if (cursorCol >= innerWidth) {
-    cursorCol = innerWidth - 1;
+  int cursorCol = static_cast<int>(m_commandCursorPos - viewStart);
+  if (cursorCol >= 0 && cursorCol < innerWidth) {
+    mvaddch(innerRow, innerLeft + cursorCol, ACS_BLOCK);
   }
-
-  mvaddch(innerRow, innerLeft + cursorCol, ACS_BLOCK);
 }
 
 void GameHud::drawHUD(const MatchSession& session) {

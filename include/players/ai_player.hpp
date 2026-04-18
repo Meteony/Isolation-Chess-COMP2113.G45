@@ -9,10 +9,10 @@ class AiPlayer : public Player {
   AiPlayer(AiDifficulty difficulty, Side side);
   ~AiPlayer() override = default;
 
-  void beginMovePhase(const GameState& state) override;
-  void beginBreakPhase(const GameState& state) override;
+  void beginMovePhase(const GameState&) override;
+  void beginBreakPhase(const GameState&) override;
 
-  void update(int ch, const GameState& state) override;
+  void update(int, const GameState& state) override;
 
   Coord findRandomMove(const GameState& state);
 
