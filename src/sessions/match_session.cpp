@@ -41,17 +41,9 @@ void MatchSession::update(int inputChar) {
 
   Player& player{currentPlayer()};
 
-  // Update UI element
-  if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
-    m_visualState.cursorVisible = true;
-    m_visualState.cursor = human->cursor();
-  } else {
-    m_visualState.cursorVisible = false;
-  }
-
   if (m_state.status() == SessionStatus::Finished) {
     m_visualState.cursorVisible = false;
-    return;
+    goto UpdateAndReturn;
   }
 
   switch (m_state.phase()) {
@@ -63,20 +55,20 @@ void MatchSession::update(int inputChar) {
 
       m_state.setPhase(TurnPhase::Move);
       player.beginMovePhase(m_state);
-      return;
+      goto UpdateAndReturn;
     }
 
     case TurnPhase::Move: {
       player.update(inputChar, m_state);
 
       if (!player.hasMoveReady()) {
-        return;
+        goto UpdateAndReturn;
       }
 
       Coord move = player.consumeMove();
 
       if (!GameRules::isLegalMove(m_state, m_state.sideToMove(), move)) {
-        return;
+        goto UpdateAndReturn;
       }
 
       GameRules::applyMove(m_state, m_state.sideToMove(), move);
@@ -102,20 +94,20 @@ void MatchSession::update(int inputChar) {
 
       player.beginBreakPhase(m_state);
       m_state.setPhase(TurnPhase::Break);
-      return;
+      goto UpdateAndReturn;
     }
 
     case TurnPhase::Break: {
       player.update(inputChar, m_state);
 
       if (!player.hasBreakReady()) {
-        return;
+        goto UpdateAndReturn;
       }
 
       Coord breakTile = player.consumeBreak();
 
       if (!GameRules::isLegalBreak(m_state, breakTile)) {
-        return;
+        goto UpdateAndReturn;
       }
 
       GameRules::applyBreak(m_state, breakTile);
@@ -152,14 +144,24 @@ void MatchSession::update(int inputChar) {
         postUiMessage(std::string("<MAGENTA>Result: ") +
                       ((winner == Side::Player1) ? "<BLUE>P1 " : "<RED>P2 ") +
                       std::string("Wins."));
-        return;
+        goto UpdateAndReturn;
       }
 
       m_state.setSideToMove(nextSide);
       m_state.setPhase(TurnPhase::NewTurn);
-      return;
+      goto UpdateAndReturn;
     }
   }
+
+UpdateAndReturn:
+  // Update UI element
+  if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
+    m_visualState.cursorVisible = true;
+    m_visualState.cursor = human->cursor();
+  } else {
+    m_visualState.cursorVisible = false;
+  }
+  return;
 }
 
 // Return current player ptr
