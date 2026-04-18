@@ -24,7 +24,7 @@ int main() {
   timeout(100);
 
   MatchSession session(9, 11, new HumanPlayer(),
-                       new AiPlayer(AiDifficulty::Easy, Side::Player2));
+                       new AiPlayer(AiDifficulty::Medium, Side::Player2));
 
   BoardRenderer board;
   board.moveTo(0, 0);

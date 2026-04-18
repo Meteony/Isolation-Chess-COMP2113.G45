@@ -50,6 +50,6 @@ class AiPlayer : public Player {
   Coord chooseAction(const GameState& state, bool isMove);
 
   int evaluate(const GameState& state);
-  int minimax(GameState state, int depth, bool isMaximizing, int alpha,
-              int beta);
+  int minimax(GameState state, int depth, Side actor, TurnPhase phase,
+              int alpha, int beta);
 };
