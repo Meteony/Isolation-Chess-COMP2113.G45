@@ -68,6 +68,7 @@ manual_game_ui: \
 	src/sessions/replay_session.cpp\
 	src/ui/board_renderer.cpp \
 	src/ui/game_hud.cpp \
+	include/ui/ui_colors.hpp\
 	tests/manual_game_ui.cpp
 	$(CXX) $(CXXFLAGS) -Iinclude $^ \
 		-lncursesw \

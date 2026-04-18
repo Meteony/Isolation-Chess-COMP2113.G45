@@ -44,14 +44,15 @@ int main() {
   bool running = true;
   while (running) {
     const int ch = getch();
-
+    /*
     if (ch == 'q' || ch == 'Q') {
       running = false;
       continue;
     }
+      */
 
-    // Tab switches focus between Game and HUD.
-    if (ch == '\t') {
+    // Tab/Esc switches focus between Game and HUD.
+    if (ch == '\t' || ch == '\x1b') {
       focus =
           (focus == FocusTarget::Game) ? FocusTarget::Hud : FocusTarget::Game;
     }
@@ -69,9 +70,14 @@ int main() {
     hud.render(hudInput, focus == FocusTarget::Hud, session);
 
     if (std::optional<std::string> cmd = hud.consumeCommand()) {
+      focus = FocusTarget::Game;
       if (cmd->empty()) {
         session.postUiMessage("[i] Returned to game");
+
       } else {
+        if (cmd == ":quit") {
+          running = false;
+        }
         session.postUiMessage("Cmd: " + *cmd);
       }
     }

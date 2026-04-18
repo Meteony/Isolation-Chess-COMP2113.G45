@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+#include "ui/ui_colors.hpp"
+
 namespace {
 // 4x2 logical tile size on screen.
 constexpr int kTileRows = 2;
@@ -11,26 +13,6 @@ constexpr int kTileCols = 4;
 
 // One blank column between the frame and the board.
 constexpr int kLeftPad = 1;
-
-enum ColorPairId { CP_P1 = 1, CP_P2 = 2, CP_FRAME = 3, CP_CURSOR_HL = 4 };
-
-// Initialize curses color pairs once per process.
-void ensureColorsInitialized() {
-  static bool initialized = false;
-  if (initialized) return;
-
-  if (has_colors()) {
-    start_color();
-    use_default_colors();
-
-    init_pair(CP_P1, COLOR_BLUE, -1);
-    init_pair(CP_P2, COLOR_RED, -1);
-    init_pair(CP_FRAME, COLOR_YELLOW, -1);
-    init_pair(CP_CURSOR_HL, COLOR_YELLOW, -1);
-  }
-
-  initialized = true;
-}
 
 // Convert a logical board row to the screen row inside the frame.
 int tileScreenRow(const Coord& winPos, const Coord& boardOffset,
@@ -121,7 +103,7 @@ void clampOffset(Coord& boardOffset, const Coord& size,
 }  // namespace
 
 void BoardRenderer::drawFrame(bool winFocused) {
-  ensureColorsInitialized();
+  ensureUiColorsInitialized();
 
   const int top = m_winPos.row;
   const int left = m_winPos.col;
@@ -134,7 +116,7 @@ void BoardRenderer::drawFrame(bool winFocused) {
     }
   }
 
-  if (winFocused) attron(COLOR_PAIR(CP_FRAME));
+  if (winFocused) attron(COLOR_PAIR(CP_FRAME_FOCUSED));
 
   mvaddstr(top, left, "╭");
   mvaddstr(top, right, "╮");
@@ -153,7 +135,7 @@ void BoardRenderer::drawFrame(bool winFocused) {
 
   mvaddstr(top, left + 1, "─Game");
 
-  if (winFocused) attroff(COLOR_PAIR(CP_FRAME));
+  if (winFocused) attroff(COLOR_PAIR(CP_FRAME_FOCUSED));
 }
 
 void BoardRenderer::drawBoard(const GameState& state) {
@@ -212,7 +194,7 @@ void BoardRenderer::moveTo(int rows, int cols) {
 
 void BoardRenderer::render(int key, bool winFocused,
                            const MatchSession& session) {
-  ensureColorsInitialized();
+  ensureUiColorsInitialized();
 
   const GameState& state = session.state();
   const MatchVisualState& visual = session.visualState();
@@ -248,7 +230,7 @@ void BoardRenderer::render(int key, bool winFocused,
 
 void BoardRenderer::render(int key, bool winFocused,
                            const ReplaySession& session) {
-  ensureColorsInitialized();
+  ensureUiColorsInitialized();
 
   const GameState& state = session.state();
   const ReplayVisualState& visual = session.visualState();

@@ -5,34 +5,9 @@
 #include <algorithm>
 #include <cctype>
 
+#include "ui/ui_colors.hpp"
+
 namespace {
-enum ColorPairId {
-  CP_P1 = 1,
-  CP_P2 = 2,
-  CP_FRAME_FOCUSED = 3,
-  CP_PHASE_MOVE = 4,
-  CP_PHASE_BREAK = 5,
-  CP_ACTIVE = 6
-};
-
-void ensureColorsInitialized() {
-  static bool initialized = false;
-  if (initialized) return;
-
-  if (has_colors()) {
-    start_color();
-    use_default_colors();
-
-    init_pair(CP_P1, COLOR_BLUE, -1);
-    init_pair(CP_P2, COLOR_RED, -1);
-    init_pair(CP_FRAME_FOCUSED, COLOR_GREEN, -1);
-    init_pair(CP_PHASE_MOVE, COLOR_BLUE, -1);
-    init_pair(CP_PHASE_BREAK, COLOR_RED, -1);
-    init_pair(CP_ACTIVE, COLOR_GREEN, -1);
-  }
-
-  initialized = true;
-}
 
 void drawText(int row, int col, const std::string& text, int colorPair = 0,
               bool bold = false) {
@@ -274,7 +249,7 @@ void GameHud::moveTo(int rows, int cols) {
 }
 
 void GameHud::render(int key, bool winFocused, const MatchSession& session) {
-  ensureColorsInitialized();
+  ensureUiColorsInitialized();
   ++m_tick;
 
   m_hudHeight = 5;
@@ -313,7 +288,7 @@ void GameHud::render(int key, bool winFocused, const MatchSession& session) {
 
 void GameHud::render(int key, bool winFocused, const ReplaySession& session) {
   ++m_tick;
-  ensureColorsInitialized();
+  ensureUiColorsInitialized();
 
   m_hudHeight = 7;
   m_commandHeight = 3;
