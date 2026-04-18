@@ -1,3 +1,5 @@
 /replays/*
 test_main_menu
 test_replay_session
+manual_board_renderer
+manual_game_ui
