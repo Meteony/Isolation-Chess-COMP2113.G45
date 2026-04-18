@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <vector>
 
 #include "core/game_state.hpp"
@@ -14,6 +15,8 @@ struct MatchVisualState {
 
 class MatchSession {
  private:
+  std::vector<std::string> m_uiMessages{};
+
   GameState m_initialState;
   GameState m_state;
 
@@ -41,8 +44,18 @@ class MatchSession {
 
   void update(int inputChar);
 
+  void postUiMessage(const std::string& msg) {
+    if (m_uiMessages.size() >= 15) {
+      m_uiMessages.erase(m_uiMessages.begin());
+    }
+    m_uiMessages.push_back(msg);
+  }
+  const std::vector<std::string>& uiMessages() const { return m_uiMessages; }
+
   const GameState& state() const;
   TurnPhase phase() const;
+
+  int gameTick() const { return m_gameTick; }
 
   ReplayData buildReplayData() const;
 

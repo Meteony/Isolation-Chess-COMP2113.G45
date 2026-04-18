@@ -25,8 +25,8 @@ void ensureColorsInitialized() {
 
     init_pair(CP_P1, COLOR_BLUE, -1);
     init_pair(CP_P2, COLOR_RED, -1);
-    init_pair(CP_FRAME, COLOR_GREEN, -1);
-    init_pair(CP_CURSOR_HL, COLOR_GREEN, -1);
+    init_pair(CP_FRAME, COLOR_YELLOW, -1);
+    init_pair(CP_CURSOR_HL, COLOR_YELLOW, -1);
   }
 
   initialized = true;
@@ -223,7 +223,7 @@ void BoardRenderer::render(int key, bool winFocused,
   drawFrame(winFocused);
   drawBoard(state);
 
-  if (state.phase() == TurnPhase::Move) {
+  if (visual.cursorVisible && state.phase() == TurnPhase::Move) {
     const Coord center = state.playerPos(state.sideToMove());
     const int moveColor = (state.sideToMove() == Side::Player1) ? CP_P1 : CP_P2;
 

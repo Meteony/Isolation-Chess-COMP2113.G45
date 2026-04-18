@@ -1,7 +1,9 @@
 #include <ncurses.h>
 
 #include <clocale>
+#include <core/enums.hpp>
 
+#include "players/ai_player.hpp"
 #include "players/human_player.hpp"
 #include "sessions/match_session.hpp"
 #include "ui/board_renderer.hpp"
@@ -17,7 +19,8 @@ int main() {
   timeout(100);
 
   MatchSession session(9, 11,  // rows, cols  -> 11 x 9 board
-                       new HumanPlayer(), new HumanPlayer());
+                       new HumanPlayer(),
+                       new AiPlayer(AiDifficulty::Medium, Side::Player2));
 
   BoardRenderer renderer;
   renderer.moveTo(0, 0);

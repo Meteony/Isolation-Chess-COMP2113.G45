@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include "core/enums.hpp"
@@ -20,6 +21,8 @@ struct ReplayVisualState {  // ui element
 
 class ReplaySession {
  private:
+  std::vector<std::string> m_uiMessages{};
+
   GameState r_state;
   GameState r_initialState;
 
@@ -57,6 +60,14 @@ class ReplaySession {
  public:
   ReplaySession(const GameState& initialState,
                 const std::vector<TurnRecord>& history);
+
+  void postUiMessage(const std::string& msg) {
+    if (m_uiMessages.size() >= 15) {
+      m_uiMessages.erase(m_uiMessages.begin());
+    }
+    m_uiMessages.push_back(msg);
+  }
+  const std::vector<std::string>& uiMessages() const { return m_uiMessages; }
 
   // updated new methods (similar to MatchSession)
   void update(int inputChar);
