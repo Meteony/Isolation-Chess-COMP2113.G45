@@ -31,7 +31,7 @@ inline void ensureUiColorsInitialized() {
     start_color();
     use_default_colors();
 
-    (COLORS >= 256) ? init_pair(CP_P1, 214, -1)
+    (COLORS >= 256) ? init_pair(CP_P1, 202, -1)
                     : init_pair(CP_P1, COLOR_YELLOW, -1);
     init_pair(CP_P2, COLOR_BLUE, -1);
 
@@ -45,8 +45,9 @@ inline void ensureUiColorsInitialized() {
       init_pair(CP_FRAME_FOCUSED, COLOR_WHITE, -1);
 
     init_pair(CP_CURSOR_HL, COLOR_GREEN, -1);
-    init_pair(CP_PHASE_MOVE, COLOR_BLUE, -1);
-    init_pair(CP_PHASE_BREAK, COLOR_RED, -1);
+    init_pair(CP_PHASE_MOVE, COLOR_WHITE, -1);
+    (COLORS >= 256) ? init_pair(CP_PHASE_BREAK, COLOR_WHITE, -1)
+                    : init_pair(CP_PHASE_BREAK, COLOR_WHITE, -1);
     init_pair(CP_ACTIVE, COLOR_GREEN, -1);
 
     init_pair(CP_MSG_BLACK, COLOR_BLACK, -1);
