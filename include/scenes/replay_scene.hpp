@@ -77,6 +77,18 @@ inline int runReplay(const std::string& replayPath) {
       }
     }
 
+    const int uiBottom = std::max(board.bottomRow(), hud.bottomRow());
+    const int uiWidth = board.size().col + hud.size().col;
+    if (focus == FocusTarget::Game) {
+      drawBottomKeyTip(uiBottom, uiWidth,
+                       {"Tab/Esc HUD", "A back", "D forward",
+                        "Space autoplay", "R reset", "Q quit"});
+    } else {
+      drawBottomKeyTip(uiBottom, uiWidth,
+                       {"Tab/Esc board", "Up/Down scroll",
+                        "Left/Right edit", "Enter run"});
+    }
+
     refresh();
     napms(kFrameMs);
   }

@@ -67,6 +67,18 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
       }
     }
 
+    const int uiBottom = std::max(board.bottomRow(), hud.bottomRow());
+    const int uiWidth = board.size().col + hud.size().col;
+    if (focus == FocusTarget::Game) {
+      drawBottomKeyTip(uiBottom, uiWidth,
+                       {"Tab/Esc HUD", "WASD move", "Enter confirm",
+                        "X cancel"});
+    } else {
+      drawBottomKeyTip(uiBottom, uiWidth,
+                       {"Tab/Esc board", "Up/Down scroll",
+                        "Left/Right edit", "Enter run"});
+    }
+
     refresh();
     napms(kFrameMs);
   }

@@ -183,6 +183,18 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
     board.render(gameInput, focus == FocusTarget::Game, session);
     hud.render(hudInput, focus == FocusTarget::Hud, session);
 
+    const int uiBottom = std::max(board.bottomRow(), hud.bottomRow());
+    const int uiWidth = board.size().col + hud.size().col;
+    if (focus == FocusTarget::Game) {
+      drawBottomKeyTip(
+          uiBottom, uiWidth,
+          {"Tab/Esc chat", "WASD move", "Enter confirm", "X cancel"});
+    } else {
+      drawBottomKeyTip(
+          uiBottom, uiWidth,
+          {"Tab/Esc board", "Up/Down scroll", "Left/Right edit", "Enter send"});
+    }
+
     if (std::optional<std::string> cmd = hud.consumeCommand()) {
       focus = FocusTarget::Game;
 

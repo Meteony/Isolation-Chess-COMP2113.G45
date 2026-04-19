@@ -6,6 +6,7 @@
 #include <clocale>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "core/replay_io.hpp"
 #include "sessions/match_session.hpp"
@@ -56,6 +57,106 @@ inline bool isValidReplayName(const std::string& name) {
     }
   }
   return true;
+}
+
+inline std::string ellipsizeKeyTip(const std::string& s, int width) {
+  if (width <= 0) {
+    return "";
+  }
+  if (static_cast<int>(s.size()) <= width) {
+    return s;
+  }
+  if (width <= 3) {
+    return std::string(width, '.');
+  }
+  return s.substr(0, width - 3) + "...";
+}
+
+inline std::string buildBottomKeyTip(const std::vector<std::string>& items,
+                                     int width) {
+  if (width <= 0 || items.empty()) {
+    return "";
+  }
+
+  std::string shown;
+  std::size_t shownCount = 0;
+
+  for (std::size_t i = 0; i < items.size(); ++i) {
+    const std::string candidate =
+        shown.empty() ? items[i] : shown + " • " + items[i];
+    if (static_cast<int>(candidate.size()) > width) {
+      break;
+    }
+    shown = candidate;
+    shownCount = i + 1;
+  }
+
+  if (shownCount == items.size()) {
+    return shown;
+  }
+
+  if (shown.empty()) {
+    return ellipsizeKeyTip(items.front(), width);
+  }
+
+  std::string withEllipsis = shown + " • ...";
+  while (static_cast<int>(withEllipsis.size()) > width) {
+    const std::size_t split = shown.rfind(" • ");
+    if (split == std::string::npos) {
+      if (width >= 3) {
+        return "...";
+      }
+      return std::string(width, '.');
+    }
+    shown.erase(split);
+    withEllipsis = shown + " • ...";
+  }
+
+  return withEllipsis;
+}
+
+inline int chooseBottomKeyTipRow(int uiBottom) {
+  int screenRows = 0;
+  int screenCols = 0;
+  getmaxyx(stdscr, screenRows, screenCols);
+
+  if (screenRows <= 0 || screenCols <= 0) {
+    return -1;
+  }
+
+  if (uiBottom + 1 < screenRows) {
+    return uiBottom + 1;
+  }
+
+  return ((screenRows & 1) != 0) ? (screenRows - 1) : -1;
+}
+
+inline void drawBottomKeyTip(int uiBottom, int uiWidth,
+                             const std::vector<std::string>& items) {
+  int screenRows = 0;
+  int screenCols = 0;
+  getmaxyx(stdscr, screenRows, screenCols);
+
+  const int row = chooseBottomKeyTipRow(uiBottom);
+  if (row < 0 || screenCols <= 0) {
+    return;
+  }
+
+  const bool appendedBelowUi = (row == uiBottom + 1);
+  const int spanWidth =
+      appendedBelowUi ? std::min(uiWidth, screenCols) : screenCols;
+  if (spanWidth <= 0) {
+    return;
+  }
+
+  const std::string text = buildBottomKeyTip(items, spanWidth);
+  const int left =
+      std::max(0, (spanWidth - static_cast<int>(text.size())) / 2);
+
+  mvhline(row, 0, ' ', screenCols);
+  attron(A_DIM);
+  mvaddnstr(row, left, text.c_str(), spanWidth - left);
+  attroff(A_DIM);
 }
 
 inline bool handleStandardSaveQuitCommand(MatchSession& session,

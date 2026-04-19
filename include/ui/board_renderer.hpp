@@ -80,4 +80,6 @@ class BoardRenderer {
               const MatchSession&);
 
   void render(int key, bool winFocused, const ReplaySession&);
+  int bottomRow() const { return m_winPos.row + m_size.row - 1; }
+  Coord size() const { return m_size; }
 };
