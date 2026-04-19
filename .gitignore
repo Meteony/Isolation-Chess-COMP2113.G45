@@ -8,3 +8,8 @@ manual_curses_match
 ./netplay
 ./run_app
 settings.cfg
+launcher
+manual_replay_ui
+run_app
+.gitignore
+netplay
