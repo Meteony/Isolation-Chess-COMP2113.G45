@@ -82,7 +82,7 @@ void MatchSession::update(int inputChar) {
       int currentTurnNumber = /*Wait we don't do turn tracking?*/
           static_cast<int>(m_history.size()) + 1;
       std::string msg =
-          "<MAGENTA>[i] Turn <MAGENTA>" + std::to_string(currentTurnNumber);
+          "<YELLOW>[i] Turn <YELLOW>" + std::to_string(currentTurnNumber);
       postUiMessage(msg);
 
       goto UpdateAndReturn;
@@ -152,11 +152,11 @@ void MatchSession::update(int inputChar) {
       const long breakTicks = m_currentTurnRecord.thinkTicksBeforeBreak;
       const long totalTicks = moveTicks + breakTicks;
       postUiMessage(
-          coloredPlayerName(actor) + std::string(": Moved to <YELLOW>(") +
-          std::to_string(m_currentTurnRecord.moveCoord.row) + ", <YELLOW>" +
+          coloredPlayerName(actor) + std::string(": Moved to <MAGENTA>(") +
+          std::to_string(m_currentTurnRecord.moveCoord.row) + ", <MAGENTA>" +
           std::to_string(m_currentTurnRecord.moveCoord.col) +
-          ") and broke <YELLOW>(" + std::to_string(breakTile.row) +
-          ", <YELLOW>" + std::to_string(breakTile.col) + ") in <YELLOW>" +
+          ") and broke <MAGENTA>(" + std::to_string(breakTile.row) +
+          ", <MAGENTA>" + std::to_string(breakTile.col) + ") in <MAGENTA>" +
           formatTicks(totalTicks) + ".");
 
       pushHistory(m_currentTurnRecord);
@@ -171,7 +171,7 @@ void MatchSession::update(int inputChar) {
           !GameRules::hasAnyLegalMove(m_state, m_state.sideToMove())) {
         m_state.setWinner(winner);
         m_state.setStatus(SessionStatus::Finished);
-        postUiMessage(std::string("<MAGENTA>Result: ") +
+        postUiMessage(std::string("<YELLOW>Result: ") +
                       coloredPlayerName(winner) + std::string(" wins."));
         goto UpdateAndReturn;
       }
