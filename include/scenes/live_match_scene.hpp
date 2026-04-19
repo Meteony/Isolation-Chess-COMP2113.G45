@@ -67,7 +67,7 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
     }
 
     refresh();
-    napms(100);
+    napms(50);
   }
 
   return 0;

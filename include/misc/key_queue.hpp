@@ -46,17 +46,19 @@ class KeyQueue {
   void drain(WINDOW* win) {
     int ch = wgetch(win);
     while (ch != ERR) {
-      enqueue(normalizeKey(ch));
+      enqueue(ch);
       ch = wgetch(win);
     }
   }
 
+  /*
   static int normalizeKey(int ch) {
     if (ch >= 0 && ch <= 255) {
       return std::tolower(static_cast<unsigned char>(ch));
     }
     return ch;
   }
+  */
 
   void enqueue(int ch) {
     if (!m_collapseRepeats || m_queue.empty() || m_queue.back() != ch) {
