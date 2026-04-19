@@ -3,3 +3,7 @@ test_main_menu
 test_replay_session
 manual_board_renderer
 manual_game_ui
+manual_curses_match
+./manual_replay_ui
+./netplay
+./run_app

@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   curs_set(0);
   timeout(100);
 
-  ReplaySession replay(replayData->initialState, replayData->history);
+  ReplaySession replay(*replayData);
 
   BoardRenderer board;
   GameHud hud;
