@@ -6,6 +6,7 @@
 #include <string>
 
 #include "core/enums.hpp"
+#include "misc/key_queue.hpp"
 #include "players/ai_player.hpp"
 #include "players/human_player.hpp"
 #include "players/network_player.hpp"
@@ -24,7 +25,7 @@ int main() {
   noecho();
   keypad(stdscr, TRUE);
   curs_set(0);
-  timeout(100);
+  timeout(0);
 
   netplay::NetworkLink link;
   if (!link.connectTo("156.246.90.92", 5050, "room-123")) {
@@ -74,8 +75,10 @@ int main() {
   FocusTarget focus = FocusTarget::Game;
 
   bool running = true;
+
+  KeyQueue input;
   while (running) {
-    const int ch = getch();
+    const int ch = input.nextKeyOrErr();
 
     std::string msg;
     while (link.popInfo(msg)) {
@@ -118,6 +121,7 @@ int main() {
     }
 
     refresh();
+    napms(100);
   }
 
   endwin();

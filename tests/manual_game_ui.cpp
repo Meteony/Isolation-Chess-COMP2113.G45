@@ -2,11 +2,14 @@
 
 #include <algorithm>
 #include <clocale>
+#include <iostream>
 #include <optional>
 #include <string>
 
 #include "core/enums.hpp"
 #include "core/replay_io.hpp"
+#include "misc/key_queue.hpp"
+#include "misc/settings_io.hpp"
 #include "players/ai_player.hpp"
 #include "players/human_player.hpp"
 #include "sessions/match_session.hpp"
@@ -16,7 +19,40 @@
 
 enum class FocusTarget { Game, Hud };
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " 1/2/3(Difficulty)\n";
+    return 1;
+  };
+
+  std::string arg1 = argv[1];
+  if (arg1 != "1" && arg1 != "2" && arg1 != "3") {
+    std::cerr << "Invalid difficulty\n";
+    return 1;
+  }
+
+  AiDifficulty difficulty;
+  std::string aiName;
+  if (arg1 == "1") {
+    difficulty = AiDifficulty::Easy;
+    aiName = "CPU (Easy)";
+  } else if (arg1 == "2") {
+    difficulty = AiDifficulty::Medium;
+    aiName = "CPU (Medium)";
+  } else if (arg1 == "3") {
+    difficulty = AiDifficulty::Hard;
+    aiName = "CPU (Hard)";
+  }
+
+  auto settings = SettingsIO::loadSettings();
+  if (!settings) {
+    Settings defaults{};
+    if (!SettingsIO::saveSettings(defaults)) {
+      return -1;
+    }
+    settings = defaults;
+  }
+
   std::setlocale(LC_ALL, "");
 
   initscr();
@@ -24,10 +60,11 @@ int main() {
   noecho();
   keypad(stdscr, TRUE);
   curs_set(0);
-  timeout(100);
+  timeout(0);
 
   MatchSession session(9, 11, new HumanPlayer(),
-                       new AiPlayer(AiDifficulty::Medium, Side::Player2));
+                       new AiPlayer(difficulty, Side::Player2),
+                       settings->gameTag, aiName);
 
   constexpr int kBoardMaxRows = 20;
   constexpr int kBoardMaxCols = 48;
@@ -47,8 +84,9 @@ int main() {
   FocusTarget focus = FocusTarget::Game;
 
   bool running = true;
+  KeyQueue input;
   while (running) {
-    const int ch = getch();
+    const int ch = input.nextKeyOrErr();
 
     if (ch == KEY_RESIZE) {
       relayoutGameScene(board, hud);
@@ -180,6 +218,7 @@ int main() {
     }
 
     refresh();
+    napms(100);
   }
 
   endwin();

@@ -2,6 +2,16 @@
 #include <string>
 #include <vector>
 
+/*
+Note to others: How this is different from game_state:
+game_state packages only the bare minimum for
+AI to quickly copy & calcluate the best path
+
+match_session is way broader & encapsulates everything,
+including even the gamer tag & full replay cache.
+AI does't need any of those.
+*/
+
 #include "core/game_state.hpp"
 #include "core/replay_data.hpp"
 #include "core/turn_record.hpp"
@@ -25,6 +35,9 @@ class MatchSession {
   Player* m_p1;
   Player* m_p2;
 
+  std::string m_player1Name{"Player 1"};
+  std::string m_player2Name{"Player 2"};
+
   int m_gameTick = 0;
 
   std::vector<TurnRecord> m_history;
@@ -37,7 +50,10 @@ class MatchSession {
   void pushHistory(const TurnRecord& record);
 
  public:
-  MatchSession(int rows, int cols, Player* p1, Player* p2);
+  MatchSession(int rows, int cols, Player* p1, Player* p2,
+               std::string player1Name = "Player 1",
+               std::string player2Name = "Player 2");
+
   MatchSession(const MatchSession&) = delete;
   MatchSession& operator=(const MatchSession&) = delete;
   ~MatchSession();
@@ -51,6 +67,8 @@ class MatchSession {
     m_uiMessages.push_back(msg);
   }
   const std::vector<std::string>& uiMessages() const { return m_uiMessages; }
+
+  const std::string& playerName(Side side) const;
 
   const GameState& state() const;
   TurnPhase phase() const;

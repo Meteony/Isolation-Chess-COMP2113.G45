@@ -10,7 +10,13 @@ ReplaySession::ReplaySession(const ReplayData& data)
       r_state(data.initialState),
       r_initialState(data.initialState),
       r_history(data.history),
-      r_turnIndex(0) {
+      r_turnIndex(0),
+
+      m_player1Name(/*Use parsed name if valid; else keep default*/
+                    (data.player1Name.empty()) ? m_player1Name
+                                               : data.player1Name),
+      m_player2Name((data.player2Name.empty()) ? m_player2Name
+                                               : data.player2Name) {
   updateVisualState();
 }
 
@@ -56,6 +62,10 @@ void ReplaySession::update(int inputChar) {
   }
 
   updateVisualState();
+}
+
+const std::string& ReplaySession::playerName(Side side) const {
+  return (side == Side::Player1) ? m_player1Name : m_player2Name;
 }
 
 const GameState& ReplaySession::state() const { return r_state; }
@@ -201,7 +211,8 @@ void ReplaySession::replayToState(size_t targetTurnIndex,
 }
 
 void ReplaySession::updateVisualState() {
-  r_visualState.currentTurn = r_turnIndex;
+  r_visualState.currentTurn =
+      r_history.empty() ? 0 : static_cast<int>(r_turnIndex) + 1;
   r_visualState.totalTurn = r_history.size();
   r_visualState.canStepForward = currentTurnValid();
   r_visualState.canStepBackward = hasPreviousAction();

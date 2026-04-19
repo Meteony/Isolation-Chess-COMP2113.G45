@@ -24,6 +24,9 @@ class ReplaySession {
  private:
   std::vector<std::string> m_uiMessages{};
 
+  std::string m_player1Name{"Player 1"};
+  std::string m_player2Name{"Player 2"};
+
   GameState r_state;
   GameState r_initialState;
 
@@ -60,6 +63,8 @@ class ReplaySession {
 
  public:
   explicit ReplaySession(const ReplayData& data);
+
+  const std::string& playerName(Side side) const;
 
   void postUiMessage(const std::string& msg) {
     if (m_uiMessages.size() >= 256) {

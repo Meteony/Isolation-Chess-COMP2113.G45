@@ -6,6 +6,7 @@
 #include <string>
 
 #include "core/replay_io.hpp"
+#include "misc/key_queue.hpp"
 #include "sessions/replay_session.hpp"
 #include "ui/board_renderer.hpp"
 #include "ui/game_hud.hpp"
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
   noecho();
   keypad(stdscr, TRUE);
   curs_set(0);
-  timeout(100);
+  timeout(0);
 
   ReplaySession replay(*replayData);
 
@@ -44,8 +45,9 @@ int main(int argc, char** argv) {
 
   relayoutGameScene(board, hud);
 
+  KeyQueue input;
   while (running) {
-    const int ch = getch();
+    const int ch = input.nextKeyOrErr();
 
     if (ch == KEY_RESIZE) {
       relayoutGameScene(board, hud);
@@ -90,6 +92,7 @@ int main(int argc, char** argv) {
       }
     }
 
+    napms(100);
     refresh();
   }
 

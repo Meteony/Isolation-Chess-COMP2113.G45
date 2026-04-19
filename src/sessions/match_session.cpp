@@ -5,13 +5,16 @@
 #include "core/game_rules.hpp"
 #include "players/human_player.hpp"
 
-// Initialization Constructor
-MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2)
+/* Initialization Constructor. Names optional */
+MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2,
+                           std::string player1Name, std::string player2Name)
     : m_initialState(rows, cols),
       m_state(rows, cols),
       m_visualState{},
       m_p1(p1),
       m_p2(p2),
+      m_player1Name(player1Name),
+      m_player2Name(player2Name),
       m_gameTick{0},
       m_history{},
       m_currentTurnRecord{} {
@@ -32,6 +35,10 @@ const Player& MatchSession::currentPlayer() const {
   return (m_state.sideToMove() == Side::Player1) ? *m_p1 : *m_p2;
 }
 
+const std::string& MatchSession::playerName(Side side) const {
+  return (side == Side::Player1) ? m_player1Name : m_player2Name;
+}
+
 static Side otherSide(Side side) {
   return (side == Side::Player1) ? Side::Player2 : Side::Player1;
 }
@@ -40,6 +47,21 @@ void MatchSession::update(int inputChar) {
   ++m_gameTick;
 
   Player& player{currentPlayer()};
+
+  auto formatTicks = [](long ticks) { /*For auto UI turn messages*/
+                                      if (ticks % 10 == 0) {
+                                        return std::to_string(ticks / 10) + "s";
+                                      }
+                                      return std::to_string(ticks / 10) + "." +
+                                             std::to_string(ticks % 10) + "s";
+  };
+
+  auto coloredPlayerName =
+      [&](Side side) { /*For auto UI turn messages too*/
+                       return ((side == Side::Player1) ? std::string("<BLUE>")
+                                                       : std::string("<RED>")) +
+                              playerName(side);
+      };
 
   if (m_state.status() == SessionStatus::Finished) {
     m_visualState.cursorVisible = false;
@@ -83,7 +105,8 @@ void MatchSession::update(int inputChar) {
       m_currentTurnRecord.moveCoord = move;
       m_currentTurnRecord.thinkTicksBeforeMove += m_gameTick;
 
-      /*Post messages*/
+      /*Post messages*/ /*Well feels a bit too much I'm removing this message*/
+      /*
       const long moveTicks = m_currentTurnRecord.thinkTicksBeforeMove;
       const std::string moveSeconds =
           (moveTicks % 10 == 0) ? std::to_string(moveTicks / 10) + "s"
@@ -95,7 +118,7 @@ void MatchSession::update(int inputChar) {
                     std::to_string(move.row) + ", <YELLOW>" +
                     std::to_string(move.col) + ") in <YELLOW>" + moveSeconds +
                     ".");
-
+      */
       // begin timing break phase now
       m_currentTurnRecord.thinkTicksBeforeBreak = -m_gameTick;
 
@@ -123,18 +146,17 @@ void MatchSession::update(int inputChar) {
       m_currentTurnRecord.thinkTicksBeforeBreak += m_gameTick;
 
       /*Post messages*/
+      const Side actor = m_state.sideToMove();
+      const long moveTicks = m_currentTurnRecord.thinkTicksBeforeMove;
       const long breakTicks = m_currentTurnRecord.thinkTicksBeforeBreak;
-      const std::string breakSeconds =
-          (breakTicks % 10 == 0) ? std::to_string(breakTicks / 10) + "s"
-                                 : std::to_string(breakTicks / 10) + "." +
-                                       std::to_string(breakTicks % 10) + "s";
-
-      postUiMessage(((m_state.sideToMove() == Side::Player1) ? "<BLUE>P1: "
-                                                             : "<RED>P2: ") +
-                    std::string("Broke <YELLOW>(") +
-                    std::to_string(breakTile.row) + ", <YELLOW>" +
-                    std::to_string(breakTile.col) + ") in <YELLOW>" +
-                    breakSeconds + ".");
+      const long totalTicks = moveTicks + breakTicks;
+      postUiMessage(
+          coloredPlayerName(actor) + std::string(": Moved to <YELLOW>(") +
+          std::to_string(m_currentTurnRecord.moveCoord.row) + ", <YELLOW>" +
+          std::to_string(m_currentTurnRecord.moveCoord.col) +
+          ") and broke <YELLOW>(" + std::to_string(breakTile.row) +
+          ", <YELLOW>" + std::to_string(breakTile.col) + ") in <YELLOW>" +
+          formatTicks(totalTicks) + ".");
 
       pushHistory(m_currentTurnRecord);
 
@@ -149,8 +171,7 @@ void MatchSession::update(int inputChar) {
         m_state.setWinner(winner);
         m_state.setStatus(SessionStatus::Finished);
         postUiMessage(std::string("<MAGENTA>Result: ") +
-                      ((winner == Side::Player1) ? "<BLUE>P1 " : "<RED>P2 ") +
-                      std::string("Wins."));
+                      coloredPlayerName(winner) + std::string(" wins."));
         goto UpdateAndReturn;
       }
 
@@ -189,14 +210,8 @@ ReplayData MatchSession::buildReplayData() const {
                          ? static_cast<int>(m_state.winner())
                          : -1;
 
-  return ReplayData{
-      m_initialState,
-      m_history,
-      m_uiMessages,
-      winner,
-      "",  // player1Name: wire this later when I add live name input
-      ""   // player2Name: wire this later when I add live name input
-  };
+  return ReplayData{m_initialState, m_history,     m_uiMessages,
+                    winner,         m_player1Name, m_player2Name};
 }
 
 const GameState& MatchSession::state() const { return m_state; }

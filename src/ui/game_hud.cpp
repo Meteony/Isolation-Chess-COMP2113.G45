@@ -217,6 +217,12 @@ std::string padOrTrimRight(const std::string& s, int width) {
   }
   return s + std::string(width - s.size(), ' ');
 }
+
+std::string fitRightAligned(const std::string& s, int width) {
+  if (width <= 0) return "";
+  if (static_cast<int>(s.size()) <= width) return s;
+  return s.substr(0, width);
+}
 }  // namespace
 
 void GameHud::drawFrame(bool winFocused) {
@@ -304,8 +310,8 @@ void GameHud::drawHUD(const MatchSession& session) {
 
   drawText(top, left, "Turn:");
 
-  const std::string turnText =
-      (state.sideToMove() == Side::Player1) ? "Player 1" : "Player 2";
+  const std::string rawTurnText = session.playerName(state.sideToMove());
+  const std::string turnText = fitRightAligned(rawTurnText, width - 6);
   const int turnColor = (state.sideToMove() == Side::Player1) ? CP_P1 : CP_P2;
   drawText(top, left + width - static_cast<int>(turnText.size()), turnText,
            turnColor);
@@ -344,8 +350,8 @@ void GameHud::drawHUD(const ReplaySession& session) {
 
   drawText(top, left, "Turn:");
 
-  const std::string turnText =
-      (state.sideToMove() == Side::Player1) ? "Player 1" : "Player 2";
+  const std::string rawTurnText = session.playerName(state.sideToMove());
+  const std::string turnText = fitRightAligned(rawTurnText, width - 6);
   const int turnColor = (state.sideToMove() == Side::Player1) ? CP_P1 : CP_P2;
   drawText(top, left + width - static_cast<int>(turnText.size()), turnText,
            turnColor);

@@ -129,15 +129,13 @@ class NetworkLink {
     return (m_mySide == Side::Player1) ? Side::Player2 : Side::Player1;
   }
 
-  bool sendMove(int turn, Coord c) {
-    return sendAction("MOVE", turn, c);
-  }
+  bool sendMove(int turn, Coord c) { return sendAction("MOVE", turn, c); }
 
-  bool sendBreak(int turn, Coord c) {
-    return sendAction("BREAK", turn, c);
-  }
+  bool sendBreak(int turn, Coord c) { return sendAction("BREAK", turn, c); }
 
-  bool tryPopMove(NetAction& out) { return tryPopAction(NetAction::Kind::Move, out); }
+  bool tryPopMove(NetAction& out) {
+    return tryPopAction(NetAction::Kind::Move, out);
+  }
   bool tryPopBreak(NetAction& out) {
     return tryPopAction(NetAction::Kind::Break, out);
   }
@@ -182,7 +180,7 @@ class NetworkLink {
   }
 
   static int connectSocket(const std::string& host, int port) {
-    struct addrinfo hints {};
+    struct addrinfo hints{};
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
@@ -393,8 +391,8 @@ class NetworkLink {
 
     if (tag == "MOVE" || tag == "BREAK") {
       NetAction action;
-      action.kind = (tag == "MOVE") ? NetAction::Kind::Move
-                                      : NetAction::Kind::Break;
+      action.kind =
+          (tag == "MOVE") ? NetAction::Kind::Move : NetAction::Kind::Break;
       if (!(iss >> action.turn >> action.coord.row >> action.coord.col)) {
         return false;
       }
@@ -529,7 +527,7 @@ if (link.mySide() == Side::Player1) {
 
 MatchSession session(9, 11, p1, p2);
 
-// Inside your main loop, surface network log lines into the HUD:
+// Inside main loop, surface network log lines into the HUD:
 // std::string msg;
 // while (link.popInfo(msg)) session.postUiMessage(msg);
 */

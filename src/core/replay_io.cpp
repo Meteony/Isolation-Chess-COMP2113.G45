@@ -17,7 +17,8 @@ constexpr std::size_t kMaxPlayerNameLength = 24;
 
 bool isValidPlayerNameChar(char ch) {
   const unsigned char uch = static_cast<unsigned char>(ch);
-  return std::isalnum(uch) || ch == ' ' || ch == '_' || ch == '-' || ch == '.';
+  return std::isalnum(uch) || ch == ' ' || ch == '_' || ch == '-' ||
+         ch == '.' || ch == '\'' || ch == '(' || ch == ')';
 }
 
 bool isValidPlayerName(const std::string& name) {
