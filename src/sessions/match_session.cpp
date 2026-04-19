@@ -3,6 +3,7 @@
 #include <string>
 
 #include "core/game_rules.hpp"
+#include "core/time.hpp"
 #include "players/human_player.hpp"
 
 /* Initialization Constructor. Names optional */
@@ -48,12 +49,17 @@ void MatchSession::update(int inputChar) {
 
   Player& player{currentPlayer()};
 
-  auto formatTicks = [](long ticks) { /*For auto UI turn messages*/
-                                      if (ticks % 10 == 0) {
-                                        return std::to_string(ticks / 10) + "s";
-                                      }
-                                      return std::to_string(ticks / 10) + "." +
-                                             std::to_string(ticks % 10) + "s";
+  auto formatTicks = [](long ticks) {
+    const long whole = ticks / kGameFps;
+    const long hundredths = (ticks % kGameFps) * 100 / kGameFps;
+
+    if (hundredths == 0) {
+      return std::to_string(whole) + "s";
+    }
+
+    std::string frac = std::to_string(hundredths);
+    if (hundredths < 10) frac = "0" + frac;
+    return std::to_string(whole) + "." + frac + "s";
   };
 
   auto coloredPlayerName =

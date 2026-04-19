@@ -2,6 +2,7 @@
 
 #include <ncurses.h>
 
+#include <core/time.hpp>
 #include <optional>
 #include <string>
 
@@ -67,7 +68,7 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
     }
 
     refresh();
-    napms(50);
+    napms(kFrameMs);
   }
 
   return 0;

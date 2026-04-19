@@ -4,6 +4,8 @@
 #include <climits>
 #include <random>
 
+#include "core/time.hpp"
+
 namespace {
 
 enum class Strategy {
@@ -121,7 +123,7 @@ Side oppositeSide(Side side) {
 
 int randomThinkTicks(std::mt19937& rng) {
   // Main loop ticks at ~100ms, so 3-10 ticks approximates 300-1000ms.
-  return std::uniform_int_distribution<int>(3, 10)(rng);
+  return std::uniform_int_distribution<int>(0.3 * kGameFps, kGameFps)(rng);
 }
 
 int minimaxDepth(const GameState& state, AiDifficulty difficulty) {

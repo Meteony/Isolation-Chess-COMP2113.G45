@@ -7,6 +7,7 @@
 #include "core/enums.hpp"
 #include "core/game_state.hpp"
 #include "core/replay_data.hpp"
+#include "core/time.hpp"
 #include "core/turn_record.hpp"
 
 struct ReplayVisualState {  // ui element
@@ -37,7 +38,7 @@ class ReplaySession {
 
   // auto-play state & timing
   bool r_autoPlayActive = false;
-  int r_defaultAutoPlayDelay = 3;  // fallback delay ticks
+  int r_defaultAutoPlayDelay = 0.3 * kGameFps;  // fallback delay ticks
   int r_autoPlayCounter = 0;
   long r_autoPlayTargetDelay = 0;
   float r_playbackSpeed =

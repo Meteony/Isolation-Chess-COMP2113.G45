@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+#include "core/time.hpp"
 #include "ui/ui_colors.hpp"
 
 namespace {
@@ -275,7 +276,8 @@ void BoardRenderer::render(int key, bool winFocused,
   drawPieces(state);
 
   /*Cursor*/
-  if (winFocused && session.gameTick() % 12 < 9) {
+  if (winFocused && session.gameTick() % static_cast<int>(1.2 * kGameFps) <
+                        (int)(0.9 * kGameFps)) {
     if (visual.cursorVisible && state.inBounds(visual.cursor)) {
       drawTileAt(state, m_winPos, m_boardOffset, m_size, visual.cursor, 0,
                  true);

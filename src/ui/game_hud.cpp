@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "core/time.hpp"
 #include "ui/ui_colors.hpp"
 
 namespace {
@@ -335,7 +336,7 @@ void GameHud::drawCommand(bool winFocused) {
   visible = padOrTrimRight(visible, innerWidth);
   drawText(innerRow, innerLeft, visible);
 
-  m_flashOn = ((m_tick / 8) % 2 == 0);
+  m_flashOn = ((m_tick / (int)(0.8 * kGameFps)) % 2 == 0);
   if (!m_flashOn) return;
 
   int cursorCol = static_cast<int>(m_commandCursorPos - viewStart);
@@ -374,7 +375,7 @@ void GameHud::drawHUD(const MatchSession& session) {
            phaseText, phaseColor);
 
   /*Time: */
-  const int seconds = session.gameTick() / 10;
+  const int seconds = session.gameTick() / kGameFps;
   // const bool flashOn = ((session.gameTick() / 5) % 2 == 0);
   const std::string timeText = std::to_string(seconds) + " seconds";
   // const std::string emptyTimeText(timeText.size(), ' ');

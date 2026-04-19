@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "core/enums.hpp"
+#include "core/time.hpp"
 #include "misc/key_queue.hpp"
 #include "misc/settings_io.hpp"
 #include "players/network_player.hpp"
@@ -186,31 +187,23 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
       focus = FocusTarget::Game;
 
       if (handleStandardSaveQuitCommand(session, *cmd, running)) {
-        refresh();
-        napms(100);
-        continue;
+        goto RefreshAndSleep;
       }
 
       const std::string s = trimCopy(*cmd);
       if (!s.empty() && s[0] == ':') {
         session.postUiMessage("<MAGENTA>[!] Invalid command: " + s);
-        refresh();
-        napms(100);
-        continue;
+        goto RefreshAndSleep;
       }
 
       if (s.empty()) {
         session.postUiMessage("<YELLOW>[i] Returned to game");
-        refresh();
-        napms(100);
-        continue;
+        goto RefreshAndSleep;
       }
 
       if (!link.sendChat(s)) {
         session.postUiMessage("<MAGENTA>[!] Failed to send chat");
-        refresh();
-        napms(100);
-        continue;
+        goto RefreshAndSleep;
       }
 
       const std::string myColor =
@@ -219,8 +212,9 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
                             s);
     }
 
+  RefreshAndSleep:
     refresh();
-    napms(100);
+    napms(kFrameMs);
   }
 
   link.disconnect();

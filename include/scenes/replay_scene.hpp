@@ -6,6 +6,7 @@
 #include <string>
 
 #include "core/replay_io.hpp"
+#include "core/time.hpp"
 #include "misc/key_queue.hpp"
 #include "scenes/scene_common.hpp"
 #include "sessions/replay_session.hpp"
@@ -40,8 +41,8 @@ inline int runReplay(const std::string& replayPath) {
     }
 
     if (ch == '\t' || ch == '\x1b') {
-      focus = (focus == FocusTarget::Game) ? FocusTarget::Hud
-                                           : FocusTarget::Game;
+      focus =
+          (focus == FocusTarget::Game) ? FocusTarget::Hud : FocusTarget::Game;
     }
 
     if (focus == FocusTarget::Game && (ch == 'q' || ch == 'Q')) {
@@ -77,7 +78,7 @@ inline int runReplay(const std::string& replayPath) {
     }
 
     refresh();
-    napms(100);
+    napms(kFrameMs);
   }
 
   return 0;
