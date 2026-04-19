@@ -7,3 +7,4 @@ manual_curses_match
 ./manual_replay_ui
 ./netplay
 ./run_app
+settings.cfg

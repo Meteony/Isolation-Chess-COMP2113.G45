@@ -86,8 +86,8 @@ class GameHud {
   Normal mode:
   ╭─HUD──────────────────╮
   │ Turn:       Player 1 │ -> Player 1: Blue; 2: Red (Turn stays white)
-  │ Phase:          Move │ -> Break: Red? Move: Blue? I don't know if it'll look
-  good. │ Time:     14 seconds │ -> X seconds: Flashes every 0.75s
+  │ Phase:          Move │ -> Break: Red? Move: Blue? Idk if it'll look good.
+  │ Time:     14 seconds │ -> X seconds: Flashes every 0.75s
   ╰──────────────────────╯
   Extra info for replay mode:
   ╭─HUD──────────────────╮
