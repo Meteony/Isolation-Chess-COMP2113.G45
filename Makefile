@@ -91,6 +91,7 @@ manual_replay_ui: \
 		-o manual_replay_ui
 
 netplay: \
+	src/misc/settings_io.cpp \
 	src/core/game_state.cpp \
 	src/core/game_rules.cpp \
 	src/core/replay_io.cpp \

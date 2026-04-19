@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <cctype>
 #include <cerrno>
 #include <chrono>
 #include <condition_variable>
@@ -26,18 +27,21 @@
 #include "players/player.hpp"
 
 // Dead-simple text protocol (one line per message):
-//   Client -> server: JOIN <room>
-//   Client -> server: MOVE <turn> <row> <col>
-//   Client -> server: BREAK <turn> <row> <col>
-//
-//   Server -> client: WELCOME <1|2>
-//   Server -> client: WAITING
-//   Server -> client: START
-//   Server -> client: MOVE <turn> <row> <col>
-//   Server -> client: BREAK <turn> <row> <col>
-//   Server -> client: INFO <free text>
-//   Server -> client: ERROR <free text>
-//
+/*
+  Client -> server: JOIN <room> <tag>
+  Client -> server: MOVE <turn> <row> <col>
+  Client -> server: BREAK <turn> <row> <col>
+  Client -> server: CHAT <text>
+
+  Server -> client: WELCOME <1|2>
+  Server -> client: WAITING
+  Server -> client: START <p1_tag> <p2_tag>
+  Server -> client: MOVE <turn> <row> <col>
+  Server -> client: BREAK <turn> <row> <col>
+  Server -> client: CHAT <1|2> <text>
+  Server -> client: INFO <free text>
+  Server -> client: ERROR <free text>
+*/
 // Keep it boring. Every packet is human-readable in tcpdump/netcat logs.
 
 namespace netplay {
@@ -50,6 +54,11 @@ struct NetAction {
   Coord coord{};
 };
 
+struct NetChat {
+  Side side = Side::Player1;
+  std::string text;
+};
+
 class NetworkLink {
  public:
   NetworkLink() = default;
@@ -59,9 +68,14 @@ class NetworkLink {
   ~NetworkLink() { disconnect(); }
 
   bool connectTo(const std::string& host, int port, const std::string& room,
-                 int timeoutSeconds = 10) {
+                 const std::string& myTag, int timeoutSeconds = 10) {
     disconnect();
     clearState();
+
+    if (!isValidTag(myTag)) {
+      pushInfo("[net] invalid tag");
+      return false;
+    }
 
     const int sock = connectSocket(host, port);
     if (sock < 0) {
@@ -72,7 +86,7 @@ class NetworkLink {
     m_sock = sock;
     m_connected.store(true);
 
-    if (!sendLine("JOIN " + room)) {
+    if (!sendLine("JOIN " + room + " " + myTag)) {
       pushInfo("[net] failed to send JOIN");
       disconnect();
       return false;
@@ -129,6 +143,35 @@ class NetworkLink {
     return (m_mySide == Side::Player1) ? Side::Player2 : Side::Player1;
   }
 
+  const std::string& player1Tag() const { return m_player1Tag; }
+  const std::string& player2Tag() const { return m_player2Tag; }
+
+  const std::string& playerTag(Side side) const {
+    return (side == Side::Player1) ? m_player1Tag : m_player2Tag;
+  }
+
+  bool sendChat(const std::string& text) {
+    const std::optional<std::string> safe = sanitizeChatText(text);
+    if (!safe) {
+      pushInfo("[net] invalid chat message");
+      return false;
+    }
+
+    const bool ok = sendLine("CHAT " + *safe);
+    if (ok) {
+      pushInfo(std::string("[net] >> CHAT ") + *safe);
+    }
+    return ok;
+  }
+
+  bool popChat(NetChat& out) {
+    std::lock_guard<std::mutex> lock(m_queueMutex);
+    if (m_chats.empty()) return false;
+    out = m_chats.front();
+    m_chats.pop_front();
+    return true;
+  }
+
   bool sendMove(int turn, Coord c) { return sendAction("MOVE", turn, c); }
 
   bool sendBreak(int turn, Coord c) { return sendAction("BREAK", turn, c); }
@@ -158,14 +201,65 @@ class NetworkLink {
 
   Side m_mySide = Side::Player1;
 
+  std::string m_player1Tag{"Player 1"};
+  std::string m_player2Tag{"Player 2"};
+
   mutable std::mutex m_sendMutex;
   mutable std::mutex m_queueMutex;
   mutable std::mutex m_infoMutex;
 
   std::deque<NetAction> m_moves;
   std::deque<NetAction> m_breaks;
+  std::deque<NetChat> m_chats;
   std::deque<std::string> m_infoLines;
   std::string m_lastError;
+
+  static bool isValidTag(const std::string& tag) {
+    if (tag.empty() || tag.size() > 24) return false;
+    for (char ch : tag) {
+      unsigned char uch = static_cast<unsigned char>(ch);
+      if (!(std::isalnum(uch) || ch == '_' || ch == '-' || ch == '.')) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static std::optional<std::string> sanitizeChatText(const std::string& text) {
+    std::size_t start = 0;
+    while (start < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[start]))) {
+      ++start;
+    }
+
+    std::size_t end = text.size();
+    while (end > start &&
+           std::isspace(static_cast<unsigned char>(text[end - 1]))) {
+      --end;
+    }
+
+    if (end <= start) return std::nullopt;
+    if (end - start > 200) return std::nullopt;
+
+    std::string out;
+    for (std::size_t i = start; i < end; ++i) {
+      unsigned char ch = static_cast<unsigned char>(text[i]);
+      if (ch > 127) return std::nullopt;
+      if (std::isalnum(ch) || std::isspace(ch) || std::ispunct(ch)) {
+        out.push_back(static_cast<char>(ch));
+      } else {
+        return std::nullopt;
+      }
+    }
+
+    if (out.empty()) return std::nullopt;
+    return out;
+  }
+
+  void pushChat(const NetChat& chat) {
+    std::lock_guard<std::mutex> lock(m_queueMutex);
+    m_chats.push_back(chat);
+  }
 
   void clearState() {
     std::lock_guard<std::mutex> qlock(m_queueMutex);
@@ -177,6 +271,9 @@ class NetworkLink {
     m_peerReady.store(false);
     m_fatalError.store(false);
     m_mySide = Side::Player1;
+    m_chats.clear();
+    m_player1Tag = "Player 1";
+    m_player2Tag = "Player 2";
   }
 
   static int connectSocket(const std::string& host, int port) {
@@ -368,6 +465,18 @@ class NetworkLink {
     }
 
     if (tag == "START") {
+      std::string p1Tag;
+      std::string p2Tag;
+      if (!(iss >> p1Tag >> p2Tag)) {
+        return false;
+      }
+
+      if (!isValidTag(p1Tag) || !isValidTag(p2Tag)) {
+        return false;
+      }
+
+      m_player1Tag = p1Tag;
+      m_player2Tag = p2Tag;
       m_peerReady.store(true);
       pushInfo("[net] peer joined; match can start");
       return true;
@@ -386,6 +495,32 @@ class NetworkLink {
       std::getline(iss, rest);
       if (!rest.empty() && rest[0] == ' ') rest.erase(0, 1);
       setError(rest.empty() ? "unknown server error" : rest);
+      return true;
+    }
+
+    if (tag == "CHAT") {
+      int sideRaw = 0;
+      if (!(iss >> sideRaw)) {
+        return false;
+      }
+
+      std::string rest;
+      std::getline(iss, rest);
+      if (!rest.empty() && rest[0] == ' ') rest.erase(0, 1);
+
+      const std::optional<std::string> safe = sanitizeChatText(rest);
+      if (!safe) {
+        return false;
+      }
+
+      if (sideRaw != 1 && sideRaw != 2) {
+        return false;
+      }
+
+      NetChat chat;
+      chat.side = (sideRaw == 1) ? Side::Player1 : Side::Player2;
+      chat.text = *safe;
+      pushChat(chat);
       return true;
     }
 
