@@ -64,6 +64,7 @@ manual_game_ui: \
 	src/core/game_rules.cpp \
 	src/players/human_player.cpp \
 	src/players/ai_player.cpp \
+	src/core/replay_io.cpp\
 	src/sessions/match_session.cpp \
 	src/sessions/replay_session.cpp\
 	src/ui/board_renderer.cpp \

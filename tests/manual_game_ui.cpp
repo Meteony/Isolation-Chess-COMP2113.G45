@@ -6,6 +6,7 @@
 #include <string>
 
 #include "core/enums.hpp"
+#include "core/replay_io.hpp"
 #include "players/ai_player.hpp"
 #include "players/human_player.hpp"
 #include "sessions/match_session.hpp"
@@ -41,10 +42,7 @@ int main() {
 
   relayoutGameScene(board, hud);
 
-  session.postUiMessage("P1: Ready.");
-  session.postUiMessage("<MAGENTA> Goto: Turn 120");
-  session.postUiMessage("[!] Invalid command");
-  session.postUiMessage("P1: Moved to (3, 4) after 14s.");
+  session.postUiMessage("<MAGENTA>[i] Game started.");
 
   FocusTarget focus = FocusTarget::Game;
 
@@ -74,17 +72,111 @@ int main() {
     board.render(gameInput, focus == FocusTarget::Game, session);
     hud.render(hudInput, focus == FocusTarget::Hud, session);
 
+    /*Parse command. Really chunky. Fold the next block.*/
     if (std::optional<std::string> cmd = hud.consumeCommand()) {
       focus = FocusTarget::Game;
-      if (cmd->empty()) {
-        session.postUiMessage("[i] Returned to game");
 
-      } else {
-        if (cmd == ":quit") {
-          running = false;
-        }
-        session.postUiMessage("Cmd: " + *cmd);
+      auto trim =
+          [](std::string s) { /*Remove whitespace*/
+                              while (!s.empty() &&
+                                     std::isspace(static_cast<unsigned char>(
+                                         s.front()))) {
+                                s.erase(s.begin());
+                              }
+                              while (!s.empty() &&
+                                     std::isspace(static_cast<unsigned char>(
+                                         s.back()))) {
+                                s.pop_back();
+                              }
+                              return s;
+          };
+
+      auto validReplayName =
+          [](const std::string&
+                 name) { /*Enforce legal chars*/
+                         if (name.empty()) {
+                           return true;  // empty => let ReplayIO auto-generate
+                         }
+                         if (name.size() > 32 || name == "." || name == "..") {
+                           return false;
+                         }
+                         for (char ch : name) {
+                           unsigned char uch = static_cast<unsigned char>(ch);
+                           if (!(std::isalnum(uch) || ch == '_' || ch == '-' ||
+                                 ch == '.')) {
+                             return false;
+                           }
+                         }
+                         return true;
+          };
+
+      std::string s = trim(*cmd);
+
+      if (s == ":quit!") {
+        running = false;
+        continue;
       }
+
+      if (s.compare(0, 6, ":quit!") == 0) {
+        session.postUiMessage("<MAGENTA>[!] :quit! does not take an argument");
+        continue;
+      }
+
+      /*3 blocks of help keytip. Fold those. */
+      if (s == ":h" || s == ":help") {
+        session.postUiMessage("<MAGENTA>[i] Commands:");
+        session.postUiMessage("  :h / :help        Show this help");
+        session.postUiMessage("  :save [name]      Save replay");
+        session.postUiMessage("  :quit [name]      Save replay and quit");
+        session.postUiMessage("  :quit!            Quit without saving");
+        continue;
+      }
+      if (s.compare(0, 2, ":h") == 0 && s != ":h") {
+        session.postUiMessage("<MAGENTA>[!] :h does not take an argument");
+        continue;
+      }
+      if (s.compare(0, 5, ":help") == 0 && s != ":help") {
+        session.postUiMessage("<MAGENTA>[!] :help does not take an argument");
+        continue;
+      }
+
+      if (s == ":save" || (s.size() > 5 && s.compare(0, 5, ":save") == 0 &&
+                           std::isspace(static_cast<unsigned char>(s[5])))) {
+        std::string name = (s.size() > 5) ? trim(s.substr(5)) : "";
+
+        if (!validReplayName(name)) {
+          session.postUiMessage("<MAGENTA>[!] Invalid replay name");
+          continue;
+        }
+
+        ReplayData replay = session.buildReplayData();
+        if (ReplayIO::saveReplay(replay, name)) {
+          session.postUiMessage("<MAGENTA>[i] Replay saved");
+        } else {
+          session.postUiMessage("<MAGENTA>[!] Failed to save replay");
+        }
+        continue;
+      }
+
+      if (s == ":quit" || (s.size() > 5 && s.compare(0, 5, ":quit") == 0 &&
+                           std::isspace(static_cast<unsigned char>(s[5])))) {
+        std::string name = (s.size() > 5) ? trim(s.substr(5)) : "";
+
+        if (!validReplayName(name)) {
+          session.postUiMessage("<MAGENTA>[!] Invalid replay name");
+          continue;
+        }
+
+        ReplayData replay = session.buildReplayData();
+        if (ReplayIO::saveReplay(replay, name)) {
+          running = false;
+        } else {
+          session.postUiMessage("<MAGENTA>[!] Failed to save replay");
+        }
+        continue;
+      }
+
+      session.postUiMessage("<MAGENTA>[!] Invalid command: " + s);
     }
 
     refresh();

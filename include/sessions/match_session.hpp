@@ -45,7 +45,7 @@ class MatchSession {
   void update(int inputChar);
 
   void postUiMessage(const std::string& msg) {
-    if (m_uiMessages.size() >= 15) {
+    if (m_uiMessages.size() >= 256) {
       m_uiMessages.erase(m_uiMessages.begin());
     }
     m_uiMessages.push_back(msg);

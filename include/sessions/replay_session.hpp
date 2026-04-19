@@ -6,6 +6,7 @@
 
 #include "core/enums.hpp"
 #include "core/game_state.hpp"
+#include "core/replay_data.hpp"
 #include "core/turn_record.hpp"
 
 struct ReplayVisualState {  // ui element
@@ -58,11 +59,10 @@ class ReplaySession {
                                         // turn's think times and playback speed
 
  public:
-  ReplaySession(const GameState& initialState,
-                const std::vector<TurnRecord>& history);
+  explicit ReplaySession(const ReplayData& data);
 
   void postUiMessage(const std::string& msg) {
-    if (m_uiMessages.size() >= 15) {
+    if (m_uiMessages.size() >= 256) {
       m_uiMessages.erase(m_uiMessages.begin());
     }
     m_uiMessages.push_back(msg);

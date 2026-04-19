@@ -55,6 +55,13 @@ void MatchSession::update(int inputChar) {
 
       m_state.setPhase(TurnPhase::Move);
       player.beginMovePhase(m_state);
+
+      int currentTurnNumber = /*Wait we don't do turn tracking?*/
+          static_cast<int>(m_history.size()) + 1;
+      std::string msg =
+          "<MAGENTA>[i] Turn <MAGENTA>" + std::to_string(currentTurnNumber);
+      postUiMessage(msg);
+
       goto UpdateAndReturn;
     }
 
@@ -178,7 +185,18 @@ const MatchVisualState& MatchSession::visualState() const {
 };
 
 ReplayData MatchSession::buildReplayData() const {
-  return ReplayData{m_initialState, m_history};
+  const int winner = (m_state.status() == SessionStatus::Finished)
+                         ? static_cast<int>(m_state.winner())
+                         : -1;
+
+  return ReplayData{
+      m_initialState,
+      m_history,
+      m_uiMessages,
+      winner,
+      "",  // player1Name: wire this later when I add live name input
+      ""   // player2Name: wire this later when I add live name input
+  };
 }
 
 const GameState& MatchSession::state() const { return m_state; }

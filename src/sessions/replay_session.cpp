@@ -3,14 +3,14 @@
 #include <cassert>
 
 #include "core/game_rules.hpp"
+#include "core/replay_data.hpp"
 
-ReplaySession::ReplaySession(const GameState& initialState,
-                             const std::vector<TurnRecord>& history)
-    : r_state(initialState),
-      r_initialState(initialState),
-      r_history(history),
-      r_turnIndex(0)  // member initializer list
-{
+ReplaySession::ReplaySession(const ReplayData& data)
+    : m_uiMessages(data.uiMessages),
+      r_state(data.initialState),
+      r_initialState(data.initialState),
+      r_history(data.history),
+      r_turnIndex(0) {
   updateVisualState();
 }
 

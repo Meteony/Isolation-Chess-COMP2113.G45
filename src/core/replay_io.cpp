@@ -1,11 +1,48 @@
 #include "core/replay_io.hpp"
 
+#include <cassert>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <optional>
 #include <sstream>
 
 const std::string ReplayIO::REPLAY_DIR = "replays";
+
+/*Validate legal player name*/
+namespace {
+
+constexpr std::size_t kMaxPlayerNameLength = 24;
+
+bool isValidPlayerNameChar(char ch) {
+  const unsigned char uch = static_cast<unsigned char>(ch);
+  return std::isalnum(uch) || ch == ' ' || ch == '_' || ch == '-' || ch == '.';
+}
+
+bool isValidPlayerName(const std::string& name) {
+  if (name.empty()) {
+    return true;  // omitted is allowed
+  }
+
+  if (name.size() > kMaxPlayerNameLength) {
+    return false;
+  }
+
+  if (name.front() == ' ' || name.back() == ' ') {
+    return false;
+  }
+
+  for (char ch : name) {
+    if (!isValidPlayerNameChar(ch)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+}  // namespace
 
 bool ReplayIO::ensureDirectoryExists() {
   try {
@@ -18,30 +55,67 @@ bool ReplayIO::ensureDirectoryExists() {
   }
 }
 
-std::string ReplayIO::generateFilename() {
-  time_t now = time(nullptr);
-  struct tm timeinfo = *localtime(&now);
+#include <ctime>
+#include <filesystem>
+#include <string>
 
-  char buffer[64];
-  strftime(buffer, sizeof(buffer), "replay_%Y%m%d_%H%M%S.txt", &timeinfo);
+/*Default argument is in header*/
+std::string ReplayIO::generateFilename(const std::string& name) {
+  namespace fs = std::filesystem;
 
-  return std::string(REPLAY_DIR) + "/" + std::string(buffer);
+  fs::path dir(REPLAY_DIR);
+  std::string baseName;
+
+  if (name.empty()) {
+    std::time_t now = std::time(nullptr);
+    std::tm timeinfo = *std::localtime(&now);
+
+    char buffer[64];
+    std::strftime(buffer, sizeof(buffer), "replay_%Y%m%d_%H%M%S", &timeinfo);
+    baseName = buffer;
+  } else {
+    baseName = name;
+  }
+
+  fs::path inputName(baseName);
+
+  // If no extension was given, force .isor
+  std::string stem = inputName.stem().string();
+  std::string ext =
+      inputName.has_extension() ? inputName.extension().string() : ".isor";
+
+  fs::path candidate = dir / (stem + ext);
+
+  int suffix = 1;
+  while (fs::exists(candidate)) {
+    candidate = dir / (stem + "_" + std::to_string(suffix) + ext);
+    ++suffix;
+  }
+
+  return candidate.string();
 }
 
-bool ReplayIO::saveReplay(const ReplayData& data, std::string& outFilename) {
+bool ReplayIO::saveReplay(const ReplayData& data,
+                          const std::string& outFilename) {
   const GameState& initialState = data.initialState;
   int rows = initialState.rows();
   int cols = initialState.cols();
   const std::vector<TurnRecord>& history = data.history;
 
-  if (!ensureDirectoryExists()) {
+  if (!isValidPlayerName(data.player1Name) ||
+      !isValidPlayerName(data.player2Name)) {
+    assert(false && "ReplayIO::saveReplay: Invalid player name");
     return false;
   }
 
-  outFilename = generateFilename();
+  if (!ensureDirectoryExists()) {
+    assert(false && "ReplayIO::saveReplay: Directory doesn't exist");
+    return false;
+  }
 
-  std::ofstream file(outFilename);
+  std::ofstream file(generateFilename(outFilename));
   if (!file.is_open()) {
+    assert(false && "ReplayIO::saveReplay: Failed to open file");
     return false;
   }
 
@@ -65,6 +139,16 @@ bool ReplayIO::saveReplay(const ReplayData& data, std::string& outFilename) {
        << "\n";
   file << "phase=" << static_cast<int>(initialState.phase()) << "\n";
   file << "status=" << static_cast<int>(initialState.status()) << "\n";
+
+  file << "winner=" << data.winner << "\n";
+
+  if (!data.player1Name.empty()) {
+    file << "player1_name=" << data.player1Name << "\n";
+  }
+
+  if (!data.player2Name.empty()) {
+    file << "player2_name=" << data.player2Name << "\n";
+  }
 
   file << "TILES\n";
   for (int r = 0; r < rows; ++r) {
@@ -90,6 +174,14 @@ bool ReplayIO::saveReplay(const ReplayData& data, std::string& outFilename) {
          << turn.thinkTicksBeforeMove << ' ' << turn.thinkTicksBeforeBreak
          << '\n';
   }
+  file << "END_TURNS\n";
+
+  file << "UI_MESSAGES\n";
+  file << "count=" << data.uiMessages.size() << "\n";
+  for (const auto& msg : data.uiMessages) {
+    file << "msg=" << std::quoted(msg) << "\n";
+  }
+  file << "END_UI_MESSAGES\n";
 
   return true;
 }
@@ -102,6 +194,7 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
 
   // Final replay history to return.
   std::vector<TurnRecord> history{};
+  std::vector<std::string> uiMessages{};
 
   // Current line buffer while scanning the file.
   std::string line;
@@ -118,7 +211,10 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
   int sideToMoveRaw = 0;
   int phaseRaw = 0;
   int statusRaw = 0;
-  int winnerRaw = 0;
+  int winnerRaw = -1;
+
+  std::string player1Name;
+  std::string player2Name;
 
   // Stores the initial board tile layout parsed from the TILES block.
   std::vector<TileState> loadedTiles;
@@ -201,6 +297,16 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
         statusRaw = std::stoi(line.substr(7));
       } else if (line.rfind("winner=", 0) == 0) {
         winnerRaw = std::stoi(line.substr(7));
+      } else if (line.rfind("player1_name=", 0) == 0) {
+        player1Name = line.substr(13);
+        if (!isValidPlayerName(player1Name)) {
+          return std::nullopt;
+        }
+      } else if (line.rfind("player2_name=", 0) == 0) {
+        player2Name = line.substr(13);
+        if (!isValidPlayerName(player2Name)) {
+          return std::nullopt;
+        }
       }
     } catch (...) {
       return std::nullopt;
@@ -229,7 +335,8 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
     return std::nullopt;
   }
 
-  if (winnerRaw != 0 && winnerRaw != 1) {
+  /*Only two players are supported in replay*/
+  if (winnerRaw != -1 && winnerRaw != 0 && winnerRaw != 1) {
     return std::nullopt;
   }
 
@@ -260,7 +367,6 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
   initialState.setSideToMove(static_cast<Side>(sideToMoveRaw));
   initialState.setPhase(static_cast<TurnPhase>(phaseRaw));
   initialState.setStatus(static_cast<SessionStatus>(statusRaw));
-  initialState.setWinner(static_cast<Side>(winnerRaw));
 
   // =========================================================
   // PASS 2: Read the TURNS section
@@ -271,40 +377,136 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
   // - empty lines
   // - serialized turn records
   // =========================================================
+  bool inTurns = false;
+  bool inMessages = false;
+  bool sawExplicitTurnSection = false;
+  bool sawExplicitMessageSection = false;
+  std::size_t expectedMessageCount = 0;
+  bool messageCountSeen = false;
+
   while (std::getline(file, line)) {
-    if (line.empty() || line == "TURNS") {
+    if (line.empty()) {
+      continue;
+    }
+    if (line == "TURNS") {
+      inTurns = true;
+      inMessages = false;
+      sawExplicitTurnSection = true;
+      continue;
+    }
+    if (line == "END_TURNS") {
+      inTurns = false;
+      continue;
+    }
+    if (line == "UI_MESSAGES") {
+      inMessages = true;
+      inTurns = false;
+      sawExplicitMessageSection = true;
+      continue;
+    }
+    if (line == "END_UI_MESSAGES") {
+      inMessages = false;
       continue;
     }
 
-    std::istringstream iss(line);
+    if (inTurns) {
+      std::istringstream iss(line);
 
-    int actor = 0;
-    int moveRow = 0;
-    int moveCol = 0;
-    int breakRow = 0;
-    int breakCol = 0;
-    int thinkMove = 0;
-    int thinkBreak = 0;
+      int actor = 0;
+      int moveRow = 0;
+      int moveCol = 0;
+      int breakRow = 0;
+      int breakCol = 0;
+      int thinkMove = 0;
+      int thinkBreak = 0;
 
-    if (!(iss >> actor >> moveRow >> moveCol >> breakRow >> breakCol >>
-          thinkMove >> thinkBreak)) {
+      if (!(iss >> actor >> moveRow >> moveCol >> breakRow >> breakCol >>
+            thinkMove >> thinkBreak)) {
+        return std::nullopt;
+      }
+
+      if (actor != 0 && actor != 1) {
+        return std::nullopt;
+      }
+
+      TurnRecord turn;
+      turn.actor = static_cast<Side>(actor);
+      turn.moveCoord = Coord{moveRow, moveCol};
+      turn.breakCoord = Coord{breakRow, breakCol};
+      turn.thinkTicksBeforeMove = thinkMove;
+      turn.thinkTicksBeforeBreak = thinkBreak;
+
+      history.push_back(turn);
+      continue;
+    }
+
+    if (inMessages) {
+      if (line.rfind("count=", 0) == 0) {
+        try {
+          expectedMessageCount =
+              static_cast<std::size_t>(std::stoul(line.substr(6)));
+        } catch (...) {
+          return std::nullopt;
+        }
+        messageCountSeen = true;
+        continue;
+      }
+
+      if (line.rfind("msg=", 0) == 0) {
+        std::istringstream iss(line.substr(4));
+        std::string msg;
+        if (!(iss >> std::quoted(msg))) {
+          return std::nullopt;
+        }
+        uiMessages.push_back(msg);
+        continue;
+      }
+
       return std::nullopt;
     }
 
-    if (actor != 0 && actor != 1) {
-      return std::nullopt;
+    // Backward compatibility for old files:
+    // after END_HEADER, old replays had raw turn lines directly.
+    if (!sawExplicitTurnSection && !sawExplicitMessageSection) {
+      std::istringstream iss(line);
+
+      int actor = 0;
+      int moveRow = 0;
+      int moveCol = 0;
+      int breakRow = 0;
+      int breakCol = 0;
+      int thinkMove = 0;
+      int thinkBreak = 0;
+
+      if (!(iss >> actor >> moveRow >> moveCol >> breakRow >> breakCol >>
+            thinkMove >> thinkBreak)) {
+        return std::nullopt;
+      }
+
+      if (actor != 0 && actor != 1) {
+        return std::nullopt;
+      }
+
+      TurnRecord turn;
+      turn.actor = static_cast<Side>(actor);
+      turn.moveCoord = Coord{moveRow, moveCol};
+      turn.breakCoord = Coord{breakRow, breakCol};
+      turn.thinkTicksBeforeMove = thinkMove;
+      turn.thinkTicksBeforeBreak = thinkBreak;
+
+      history.push_back(turn);
+      continue;
     }
 
-    TurnRecord turn;
-    turn.actor = static_cast<Side>(actor);
-    turn.moveCoord = Coord{moveRow, moveCol};
-    turn.breakCoord = Coord{breakRow, breakCol};
-    turn.thinkTicksBeforeMove = thinkMove;
-    turn.thinkTicksBeforeBreak = thinkBreak;
+    return std::nullopt;
+  }
 
-    history.push_back(turn);
+  if (messageCountSeen && uiMessages.size() != expectedMessageCount) {
+    return std::nullopt;
   }
 
   // Return the fully reconstructed replay package.
-  return ReplayData{initialState, history};
+
+  return ReplayData{initialState, history,     uiMessages,
+                    winnerRaw,    player1Name, player2Name};
 }
