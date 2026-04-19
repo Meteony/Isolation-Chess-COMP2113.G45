@@ -58,8 +58,9 @@ void MatchSession::update(int inputChar) {
 
   auto coloredPlayerName =
       [&](Side side) { /*For auto UI turn messages too*/
-                       return ((side == Side::Player1) ? std::string("<BLUE>")
-                                                       : std::string("<RED>")) +
+                       return ((side == Side::Player1)
+                                   ? std::string("<YELLOW>")
+                                   : std::string("<BLUE>")) +
                               playerName(side);
       };
 

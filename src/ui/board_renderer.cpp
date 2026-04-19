@@ -49,12 +49,16 @@ void drawGlyphBlock(int row, int col, const char* top, const char* bottom,
 
 void drawTileAt(const GameState& state, const Coord& winPos,
                 const Coord& boardOffset, const Coord& size, Coord boardCoord,
-                int colorPair = 0) {
+                int colorPair = 0, bool isCursor = false) {
   const int row = tileScreenRow(winPos, boardOffset, boardCoord);
   const int col = tileScreenCol(winPos, boardOffset, boardCoord);
 
   if (!tileVisible(winPos, size, row, col)) return;
 
+  if (isCursor) {
+    drawGlyphBlock(row, col, "████", "████", colorPair);
+    return;
+  }
   // Broken tiles always use the same base glyphs.
   // Only the cursor highlight recolors them.
   if (state.tileAt(boardCoord) == TileState::Broken) {
@@ -70,12 +74,12 @@ void drawTileAt(const GameState& state, const Coord& winPos,
   const bool odd = ((boardCoord.row + boardCoord.col) & 1) != 0;
   if (odd) {
     if (colorPair == 0) {
-      drawGlyphBlock(row, col, "    ", "    ");
+      drawGlyphBlock(row, col, "    ", "    ", A_DIM);
     } else {
       drawGlyphBlock(row, col, "░░░░", "░░░░", colorPair);
     }
   } else {
-    drawGlyphBlock(row, col, "▒▒▒▒", "▒▒▒▒", colorPair);
+    drawGlyphBlock(row, col, "░░░░", "░░░░", colorPair);
   }
 }
 
@@ -159,7 +163,9 @@ void BoardRenderer::drawFrame(bool winFocused) {
     }
   }
 
-  if (winFocused) attron(COLOR_PAIR(CP_FRAME_FOCUSED));
+  const int pair = winFocused ? CP_FRAME_FOCUSED : CP_FRAME;
+  if (!winFocused) attron(A_DIM);
+  attron(COLOR_PAIR(pair));
 
   mvaddstr(top, left, "╭");
   mvaddstr(top, right, "╮");
@@ -176,9 +182,10 @@ void BoardRenderer::drawFrame(bool winFocused) {
     mvaddstr(r, right, "│");
   }
 
-  mvaddstr(top, left + 1, "─Game");
+  mvaddstr(top, left + 2, "Game");
 
-  if (winFocused) attroff(COLOR_PAIR(CP_FRAME_FOCUSED));
+  attroff(COLOR_PAIR(pair));
+  if (!winFocused) attroff(A_DIM);
 }
 
 void BoardRenderer::drawBoard(const GameState& state) {
@@ -265,12 +272,16 @@ void BoardRenderer::render(int key, bool winFocused,
     }
   }
 
-  if (visual.cursorVisible && state.inBounds(visual.cursor)) {
-    drawTileAt(state, m_winPos, m_boardOffset, m_size, visual.cursor,
-               CP_CURSOR_HL);
+  drawPieces(state);
+
+  /*Cursor*/
+  if (winFocused && session.gameTick() % 12 < 9) {
+    if (visual.cursorVisible && state.inBounds(visual.cursor)) {
+      drawTileAt(state, m_winPos, m_boardOffset, m_size, visual.cursor, 0,
+                 true);
+    }
   }
 
-  drawPieces(state);
   drawOverflowMarkers(m_winPos, m_size, m_boardOffset, state);
   overlayMiscElements(visual);
 }

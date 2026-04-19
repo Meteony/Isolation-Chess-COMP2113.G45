@@ -183,10 +183,12 @@ void drawText(int row, int col, const std::string& text, int colorPair = 0,
 
 void drawBoxFrame(int top, int left, int height, int width,
                   const std::string& title = "", bool focused = false) {
+  if (!focused) attron(A_DIM);
   const int bottom = top + height - 1;
   const int right = left + width - 1;
 
-  if (focused) attron(COLOR_PAIR(CP_FRAME_FOCUSED));
+  const int pair = focused ? CP_FRAME_FOCUSED : CP_FRAME;
+  attron(COLOR_PAIR(pair));
 
   mvaddstr(top, left, "╭");
   mvaddstr(top, right, "╮");
@@ -204,10 +206,48 @@ void drawBoxFrame(int top, int left, int height, int width,
   }
 
   if (!title.empty()) {
-    mvaddnstr(top, left + 1, title.c_str(), width - 2);
+    mvaddnstr(top, left + 2, title.c_str(), width - 2);
   }
 
-  if (focused) attroff(COLOR_PAIR(CP_FRAME_FOCUSED));
+  if (!focused) attroff(A_DIM);
+  attroff(COLOR_PAIR(pair));
+}
+
+void drawScrollbar(int top, int col, int height, int visibleTop,
+                   int totalLines) {
+  // No scrolling needed.
+  if (totalLines <= height) {
+    for (int i = 0; i < height; ++i) {
+      mvaddch(top + i, col, ' ');
+    }
+    return;
+  }
+
+  const int maxScroll = totalLines - height;
+
+  // Classic proportional thumb size.
+  const int thumbHeight = std::max(1, (height * height) / totalLines);
+  const int thumbTravel = height - thumbHeight;
+
+  const int thumbTop =
+      top + (maxScroll == 0 ? 0 : (thumbTravel * visibleTop) / maxScroll);
+
+  attron(COLOR_PAIR(CP_FRAME));
+  attron(A_DIM);
+
+  // Track
+  for (int i = 0; i < height; ++i) {
+    mvaddch(top + i, col, ' ');
+  }
+
+  attroff(A_DIM);
+
+  // Thumb
+  for (int i = 0; i < thumbHeight; ++i) {
+    mvaddch(thumbTop + i, col, ACS_VLINE);
+  }
+
+  attroff(COLOR_PAIR(CP_FRAME));
 }
 
 std::string padOrTrimRight(const std::string& s, int width) {
@@ -229,8 +269,8 @@ void GameHud::drawFrame(bool winFocused) {
   const int top = m_winPos.row;
   const int left = m_winPos.col;
 
-  drawBoxFrame(top, left, m_hudHeight, m_size.col, "─HUD", winFocused);
-  drawBoxFrame(top + m_hudHeight, left, m_logHeight, m_size.col, "─Log",
+  drawBoxFrame(top, left, m_hudHeight, m_size.col, "HUD", winFocused);
+  drawBoxFrame(top + m_hudHeight, left, m_logHeight, m_size.col, "Log",
                winFocused);
   drawBoxFrame(top + m_hudHeight + m_logHeight, left, m_commandHeight,
                m_size.col, "", winFocused);
@@ -266,6 +306,8 @@ void GameHud::drawMessages(const std::vector<std::string>& msgs) {
       drawWordRow(row, m_winPos.col + 2, {}, innerWidth);
     }
   }
+  const int scrollCol = m_winPos.col + m_size.col - 2;
+  drawScrollbar(innerTop, scrollCol, innerHeight, start, totalLines);
 
   attrset(A_NORMAL);
 }

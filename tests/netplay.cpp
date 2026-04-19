@@ -94,7 +94,7 @@ int main() {
     netplay::NetChat chat;
     while (link.popChat(chat)) {
       const std::string color =
-          (chat.side == Side::Player1) ? "<BLUE>" : "<RED>";
+          (chat.side == Side::Player1) ? "<YELLOW>" : "<BLUE>";
       session.postUiMessage(color + session.playerName(chat.side) + ": " +
                             chat.text);
     }
@@ -257,7 +257,7 @@ int main() {
       }
 
       const std::string myColor =
-          (link.mySide() == Side::Player1) ? "<BLUE>" : "<RED>";
+          (link.mySide() == Side::Player1) ? "<YELLOW>" : "<BLUE>";
       session.postUiMessage(myColor + session.playerName(link.mySide()) + ": " +
                             s);
     }
