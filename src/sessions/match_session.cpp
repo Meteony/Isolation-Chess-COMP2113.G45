@@ -156,14 +156,8 @@ void MatchSession::update(int inputChar) {
       const long moveTicks = m_currentTurnRecord.thinkTicksBeforeMove;
       const long breakTicks = m_currentTurnRecord.thinkTicksBeforeBreak;
       const long totalTicks = moveTicks + breakTicks;
-      postUiMessage(
-          coloredPlayerName(actor) + std::string(": Moved to <MAGENTA>(") +
-          std::to_string(m_currentTurnRecord.moveCoord.row) + ", <MAGENTA>" +
-          std::to_string(m_currentTurnRecord.moveCoord.col) +
-          ") and broke <MAGENTA>(" + std::to_string(breakTile.row) +
-          ", <MAGENTA>" + std::to_string(breakTile.col) + ") in <MAGENTA>" +
-          formatTicks(totalTicks) + ".");
-
+      postUiMessage(coloredPlayerName(actor) + ": Finished in " +
+                    formatTicks(totalTicks));
       pushHistory(m_currentTurnRecord);
 
       Side nextSide = otherSide(m_state.sideToMove());

@@ -86,11 +86,11 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
     if (focus == FocusTarget::Game) {
       drawBottomKeyTip(
           uiBottom, uiWidth,
-          {"[Tab/Esc] HUD", "[WASD] Move", "[C] Confirm", "[Arrows] Scroll"});
+          {"[Tab] HUD", "[WASD] Move", "[C] Confirm", "[Arrows] Scroll"});
     } else {
-      drawBottomKeyTip(uiBottom, uiWidth,
-                       {"[Tab/Esc] Resume", "[:h] Help", "[↑↓] Scroll",
-                        "[←→] Cursor", "[Enter] Run/Send"});
+      drawBottomKeyTip(
+          uiBottom, uiWidth,
+          {"[Tab] Back", "[:h] Help", "[Arrows] Edit", "[Enter] Send"});
     }
     refresh();
     napms(kFrameMs);
@@ -109,11 +109,11 @@ inline int runHumanVsHuman(const Settings& settings) {
 inline std::string difficultyLabel(AiDifficulty difficulty) {
   switch (difficulty) {
     case AiDifficulty::Easy:
-      return "CPU (Easy)";
+      return "CPU(Easy)";
     case AiDifficulty::Medium:
-      return "CPU (Medium)";
+      return "CPU(Medium)";
     case AiDifficulty::Hard:
-      return "CPU (Hard)";
+      return "CPU(Hard)";
   }
   return "CPU";
 }

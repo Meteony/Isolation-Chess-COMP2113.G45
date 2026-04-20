@@ -149,12 +149,12 @@ inline int runReplay(const std::string& replayPath) {
     const int uiWidth = board.size().col + hud.size().col;
     if (focus == FocusTarget::Game) {
       drawBottomKeyTip(uiBottom, uiWidth,
-                       {"[Tab/Esc] HUD", "[A/D] Step", "[Space] Autoplay",
-                        "[R] Reset", "[:h] Help", "[:q] Quit"});
+                       {"[Tab] HUD", "[A/D] Step", "[Space] Auto", "[R] Reset",
+                        "[:h] Help"});
     } else {
-      drawBottomKeyTip(uiBottom, uiWidth,
-                       {"[Tab/Esc] Resume", "[↑↓] Scroll", "[←→] Cursor",
-                        "[Enter] Run/Send", "[:h] Help"});
+      drawBottomKeyTip(
+          uiBottom, uiWidth,
+          {"[Tab] Back", "[Arrows] Edit", "[Enter] Send", "[:h] Help"});
     }
 
     refresh();

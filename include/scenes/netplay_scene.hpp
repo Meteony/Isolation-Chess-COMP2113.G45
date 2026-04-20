@@ -189,11 +189,11 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
     if (focus == FocusTarget::Game) {
       drawBottomKeyTip(
           uiBottom, uiWidth,
-          {"[Tab/Esc] Chat", "[WASD] Move", "[C] Confirm", "[Arrows] Scroll"});
+          {"[Tab] Chat", "[WASD] Move", "[C] Confirm", "[Arrows] Scroll"});
     } else {
-      drawBottomKeyTip(uiBottom, uiWidth,
-                       {"[Tab/Esc] Resume", "[:h] Help", "[↑↓] Scroll",
-                        "[←→] Cursor", "[Enter] Run/Send"});
+      drawBottomKeyTip(
+          uiBottom, uiWidth,
+          {"[Tab] Back", "[:h] Help", "[Arrows] Edit", "[Enter] Send"});
     }
 
     if (std::optional<std::string> cmd = hud.consumeCommand()) {
