@@ -138,12 +138,14 @@ inline int chooseBottomKeyTipRow(int uiBottom) {
   return ((screenRows & 1) != 0) ? (screenRows - 1) : -1;
 }
 
-// Draws the bottom key-tip line for the current UI.
+/* Draws the bottom key-tip line for the current UI
+   at given row (specified in the arguments)*/
 inline void drawBottomKeyTip(int uiBottom, int uiWidth,
                              const std::vector<std::string>& items) {
-  int screenRows = 0;
+  int screenRows = 0; /*Make getmaxyx happy*/
   int screenCols = 0;
   getmaxyx(stdscr, screenRows, screenCols);
+  (void)screenRows;
 
   const int row = chooseBottomKeyTipRow(uiBottom);
   if (row < 0 || screenCols <= 0) {
@@ -158,8 +160,7 @@ inline void drawBottomKeyTip(int uiBottom, int uiWidth,
   }
 
   const std::string text = buildBottomKeyTip(items, spanWidth);
-  const int left =
-      std::max(0, (spanWidth - static_cast<int>(text.size())) / 2);
+  const int left = std::max(0, (spanWidth - static_cast<int>(text.size())) / 2);
 
   mvhline(row, 0, ' ', screenCols);
   attron(A_DIM);

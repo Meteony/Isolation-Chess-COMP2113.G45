@@ -235,6 +235,7 @@ void editSettingsMenu(Settings& settings) {
     int maxRows = 0;
     int maxCols = 0;
     getmaxyx(stdscr, maxRows, maxCols);
+    (void)maxRows;
 
     const int width = std::min(78, maxCols - 2);
     const int left = std::max(0, (maxCols - width) / 2);
@@ -341,6 +342,7 @@ std::optional<std::string> replayBrowserMenu() {
     int maxRows = 0;
     int maxCols = 0;
     getmaxyx(stdscr, maxRows, maxCols);
+    (void)maxRows;
 
     const int width = std::min(90, maxCols - 2);
     const int left = std::max(0, (maxCols - width) / 2);
@@ -412,6 +414,7 @@ MainAction mainMenu(const Settings& settings, const std::string& roomCode) {
     int maxRows = 0;
     int maxCols = 72;
     getmaxyx(stdscr, maxRows, maxCols);
+    (void)maxRows;
 
     const int width = std::min(82, maxCols - 2);
     const int left = std::max(0, (maxCols - width) / 2);

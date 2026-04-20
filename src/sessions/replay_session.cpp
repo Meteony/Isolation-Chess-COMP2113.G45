@@ -7,16 +7,16 @@
 
 ReplaySession::ReplaySession(const ReplayData& data)
     : m_uiMessages(data.uiMessages),
-      r_state(data.initialState),
-      r_initialState(data.initialState),
-      r_history(data.history),
-      r_turnIndex(0),
 
       m_player1Name(/*Use parsed name if valid; else keep default*/
                     (data.player1Name.empty()) ? m_player1Name
                                                : data.player1Name),
       m_player2Name((data.player2Name.empty()) ? m_player2Name
-                                               : data.player2Name) {
+                                               : data.player2Name),
+      r_state(data.initialState),
+      r_initialState(data.initialState),
+      r_history(data.history),
+      r_turnIndex(0) {
   updateVisualState();
 }
 
