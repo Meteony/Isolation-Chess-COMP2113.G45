@@ -16,6 +16,7 @@
 
 namespace scenes {
 
+// Runs a replay scene for replayPath and returns an exit code.
 inline int runReplay(const std::string& replayPath) {
   const std::optional<ReplayData> replayData = ReplayIO::loadReplay(replayPath);
   if (!replayData) {

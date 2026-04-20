@@ -23,9 +23,11 @@ I did exactly this in Python before.
 
 class KeyQueue {
  public:
+  // Creates a key queue with size and repeat settings.
   explicit KeyQueue(std::size_t maxQueue = 128, bool collapseRepeats = true)
       : m_maxQueue(maxQueue), m_collapseRepeats(collapseRepeats) {}
 
+  // Returns the next queued key from win, or ERR.
   int nextKeyOrErr(WINDOW* win = stdscr) {
     drain(win);
 
@@ -38,11 +40,15 @@ class KeyQueue {
     return key;
   }
 
+  // Returns true if no keys are queued.
   bool empty() const { return m_queue.empty(); }
+  // Returns the current number of queued keys.
   std::size_t size() const { return m_queue.size(); }
+  // Clears all queued keys.
   void clear() { m_queue.clear(); }
 
  private:
+  // Pulls pending keys from win into the queue.
   void drain(WINDOW* win) {
     int ch = wgetch(win);
     while (ch != ERR) {
@@ -60,6 +66,7 @@ class KeyQueue {
   }
   */
 
+  // Adds ch to the queue and trims overflow.
   void enqueue(int ch) {
     if (!m_collapseRepeats || m_queue.empty() || m_queue.back() != ch) {
       m_queue.push_back(ch);

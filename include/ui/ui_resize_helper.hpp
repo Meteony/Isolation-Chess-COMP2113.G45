@@ -24,6 +24,7 @@ struct GameSceneLayoutConfig {
   int minBoardCols = 7;
 };
 
+// Resizes and repositions board and HUD to fit the terminal.
 inline void relayoutGameScene(BoardRenderer& board, GameHud& hud,
                               const GameSceneLayoutConfig& cfg = {}) {
   int screenRows = 0;

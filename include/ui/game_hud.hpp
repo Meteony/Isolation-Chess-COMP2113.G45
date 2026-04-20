@@ -53,6 +53,7 @@ class GameHud {
 
   /*(Frame included:) HUD & command boxes are fixed size (5 & ?? rows)*/
   /*Log can be shrunken down to a min of 3 rows*/
+  // Draws the HUD frame at the current size and position.
   void drawFrame(bool winFocused);
 
   /*
@@ -69,6 +70,7 @@ class GameHud {
   ╰──────────────────────╯
   */
   /*Full state access seems unnecessary*/
+  // Draws the message log from msgs.
   void drawMessages(const std::vector<std::string>& msgs);
 
   /*
@@ -80,6 +82,7 @@ class GameHud {
   │ dasmals asddd asdd█a │
   ╰──────────────────────╯
   */
+  // Draws the command input box.
   void drawCommand(bool winFocused);
 
   /*
@@ -100,7 +103,9 @@ class GameHud {
 
   */
   /*Polymorphism*/
+  // Draws live-match HUD data from session.
   void drawHUD(const MatchSession& session);
+  // Draws replay HUD data from session.
   void drawHUD(const ReplaySession& session);
 
  public:
@@ -108,16 +113,21 @@ class GameHud {
   GameHud(Coord size = {20, 24}, Coord pos = {0, 48})
       : m_size(size), m_winPos(pos) {};
 
+  // Sets the HUD size in rows and cols.
   void resize(int rows, int cols);
 
+  // Moves the HUD origin to rows and cols.
   void moveTo(int rows, int cols);
 
   /*Overloaded*/
   /*If HUD focused: Key_up scrolls messsages up a line, vice versa*/
   /*I guess this part should also decide how tall each part is going to be*/
+  // Draws the live HUD and handles HUD input.
   void render(int key, bool winFocused, const MatchSession& session);
+  // Draws the replay HUD and handles HUD input.
   void render(int key, bool winFocused, const ReplaySession& session);
 
+  // Returns the submitted command, if any.
   std::optional<std::string> consumeCommand();
   int bottomRow() const { return m_winPos.row + m_size.row - 1; }
   Coord size() const { return m_size; }

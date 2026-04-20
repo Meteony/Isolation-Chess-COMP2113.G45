@@ -45,10 +45,14 @@ private:
 class MainMenuScene : public Scene
 {
 public:
+    // Creates the main menu scene.
     MainMenuScene();
 
+    // Handles one input step using ch.
     void handleInput(App &app, int ch) override;
+    // Updates menu state for one frame.
     void update(App &app) override;
+    // Draws the current menu screen.
     void render(App &app) override;
 
 private:
@@ -56,6 +60,8 @@ private:
     bool m_inDifficultyMenu = false;
     int m_selectedDifficulty = 0; // 0=Easy,1=Medium,2=Hard,3=Back
 
+    // Draws the main menu options.
     void drawMainMenu() const;
+    // Draws the difficulty submenu.
     void drawDifficultyMenu() const;
 };

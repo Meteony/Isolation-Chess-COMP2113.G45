@@ -17,6 +17,7 @@ enum class FocusTarget { Game, Hud };
 
 class NcursesGuard {
  public:
+  // Starts ncurses with the project's default settings.
   NcursesGuard() {
     std::setlocale(LC_ALL, "");
     initscr();
@@ -30,9 +31,11 @@ class NcursesGuard {
   NcursesGuard(const NcursesGuard&) = delete;
   NcursesGuard& operator=(const NcursesGuard&) = delete;
 
+  // Ends the ncurses session.
   ~NcursesGuard() { endwin(); }
 };
 
+// Returns s with leading and trailing whitespace removed.
 inline std::string trimCopy(std::string s) {
   while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
     s.erase(s.begin());
@@ -43,6 +46,7 @@ inline std::string trimCopy(std::string s) {
   return s;
 }
 
+// Returns true if name is allowed for replay saving.
 inline bool isValidReplayName(const std::string& name) {
   if (name.empty()) {
     return true;
@@ -59,6 +63,7 @@ inline bool isValidReplayName(const std::string& name) {
   return true;
 }
 
+// Shortens s to width and adds dots if needed.
 inline std::string ellipsizeKeyTip(const std::string& s, int width) {
   if (width <= 0) {
     return "";
@@ -72,6 +77,7 @@ inline std::string ellipsizeKeyTip(const std::string& s, int width) {
   return s.substr(0, width - 3) + "...";
 }
 
+// Builds one bottom key-tip line within width.
 inline std::string buildBottomKeyTip(const std::vector<std::string>& items,
                                      int width) {
   if (width <= 0 || items.empty()) {
@@ -115,6 +121,7 @@ inline std::string buildBottomKeyTip(const std::vector<std::string>& items,
   return withEllipsis;
 }
 
+// Picks the row used for the bottom key-tip line.
 inline int chooseBottomKeyTipRow(int uiBottom) {
   int screenRows = 0;
   int screenCols = 0;
@@ -131,6 +138,7 @@ inline int chooseBottomKeyTipRow(int uiBottom) {
   return ((screenRows & 1) != 0) ? (screenRows - 1) : -1;
 }
 
+// Draws the bottom key-tip line for the current UI.
 inline void drawBottomKeyTip(int uiBottom, int uiWidth,
                              const std::vector<std::string>& items) {
   int screenRows = 0;
@@ -159,6 +167,7 @@ inline void drawBottomKeyTip(int uiBottom, int uiWidth,
   attroff(A_DIM);
 }
 
+// Handles shared save/quit commands. Returns true if handled.
 inline bool handleStandardSaveQuitCommand(MatchSession& session,
                                           const std::string& rawCommand,
                                           bool& running) {

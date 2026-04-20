@@ -44,12 +44,16 @@ class MatchSession {
   TurnRecord m_currentTurnRecord{};
 
  private:
+  // Returns the player whose turn is active.
   Player& currentPlayer();
+  // Returns the active player for const access.
   const Player& currentPlayer() const;
 
+  // Appends one turn record to the history list.
   void pushHistory(const TurnRecord& record);
 
  public:
+  // Creates a live match with board size, players, and names.
   MatchSession(int rows, int cols, Player* p1, Player* p2,
                std::string player1Name = "Player 1",
                std::string player2Name = "Player 2");
@@ -58,6 +62,7 @@ class MatchSession {
   MatchSession& operator=(const MatchSession&) = delete;
   ~MatchSession();
 
+  // Advances the live match by one frame of input.
   void update(int inputChar);
 
   void postUiMessage(const std::string& msg) {
@@ -68,16 +73,22 @@ class MatchSession {
   }
   const std::vector<std::string>& uiMessages() const { return m_uiMessages; }
 
+  // Returns the display name for side.
   const std::string& playerName(Side side) const;
 
+  // Returns the current authoritative game state.
   const GameState& state() const;
+  // Returns the current turn phase.
   TurnPhase phase() const;
 
   int gameTick() const { return m_gameTick; }
 
+  // Builds replay data from the current match.
   ReplayData buildReplayData() const;
 
+  // Returns UI-only visual state for rendering.
   const MatchVisualState& visualState() const;
 
+  // Returns true if the match has finished.
   bool isFinished() const;
 };

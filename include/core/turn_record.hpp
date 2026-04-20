@@ -9,6 +9,7 @@ struct TurnRecord {
   long thinkTicksBeforeMove = 0;
   long thinkTicksBeforeBreak = 0;
 
+  // Resets the record for newActor and clears stored actions.
   void reset(Side newActor) {
     actor = newActor;
     moveCoord = Coord{};

@@ -46,25 +46,38 @@ class ReplaySession {
 
  private:
   // helper methods
+  // Refreshes replay-only UI state.
   void updateVisualState();
+  // Resets the replay to the initial state.
   void reset();  // reset replay to beginning
+  // Returns true if the current turn index is valid.
   bool currentTurnValid() const;
+  // Returns true if a backward step is available.
   bool hasPreviousAction() const;
+  // Steps one replay action forward. Returns true on success.
   bool stepForward();   // applies next action, false if none available
+  // Steps one replay action backward. Returns true on success.
   bool stepBackward();  // undo last action, false if none available
+  // Rebuilds replay state up to the target point.
   void replayToState(
       size_t targetTurnIndex,
       TurnPhase targetPhase);  // replay from initial state to given state
+  // Applies the current turn's move action.
   void applyCurrentMove();
+  // Applies the current turn's break action.
   void applyCurrentBreak();
 
+  // Toggles replay autoplay on or off.
   void toggleAutoPlay();
+  // Returns the autoplay delay for the current turn.
   long calculateAutoPlayDelay() const;  // calculate delay based on current
                                         // turn's think times and playback speed
 
  public:
+  // Creates a replay session from saved replay data.
   explicit ReplaySession(const ReplayData& data);
 
+  // Returns the display name for side.
   const std::string& playerName(Side side) const;
 
   void postUiMessage(const std::string& msg) {
@@ -76,16 +89,26 @@ class ReplaySession {
   const std::vector<std::string>& uiMessages() const { return m_uiMessages; }
 
   // updated new methods (similar to MatchSession)
+  // Advances the replay by one frame of input.
   void update(int inputChar);
+  // Returns the current replay state snapshot.
   const GameState& state() const;
+  // Returns the current replay phase.
   TurnPhase phase() const;
+  // Returns the stored replay turn history.
   const std::vector<TurnRecord>& history() const;
+  // Returns replay-only UI state for rendering.
   const ReplayVisualState& visualState() const;
+  // Returns true if replay state is terminal.
   bool isFinished() const;
 
   // auto-play methods
+  // Enables or disables autoplay.
   void setAutoPlay(bool active);
+  // Sets the fixed autoplay delay in ticks.
   void setAutoPlayDelay(int ticks);
+  // Returns true if autoplay is active.
   bool isAutoPlayActive() const;
+  // Sets the replay playback speed multiplier.
   void setPlaybackSpeed(float speed);
 };

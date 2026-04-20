@@ -21,6 +21,7 @@ struct ReplaySummary {
   int cols = 0;
 };
 
+// Returns the winner label stored in replay.
 inline std::string replayWinnerLabel(const ReplayData& replay) {
   if (replay.winner == 0) {
     return replay.player1Name.empty() ? "Player 1" : replay.player1Name;
@@ -31,6 +32,7 @@ inline std::string replayWinnerLabel(const ReplayData& replay) {
   return "Unknown";
 }
 
+// Scans replays/ and returns readable replay summaries.
 inline std::vector<ReplaySummary> scanReplays() {
   namespace fs = std::filesystem;
 

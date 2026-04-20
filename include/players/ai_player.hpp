@@ -6,16 +6,22 @@
 
 class AiPlayer : public Player {
  public:
+  // Creates an AI player for the given difficulty and side.
   AiPlayer(AiDifficulty difficulty, Side side);
   ~AiPlayer() override = default;
 
+  // Starts AI move planning from state.
   void beginMovePhase(const GameState&) override;
+  // Starts AI break planning from state.
   void beginBreakPhase(const GameState&) override;
 
+  // Advances AI thinking using the latest state.
   void update(int, const GameState& state) override;
 
+  // Picks a random legal move from state.
   Coord findRandomMove(const GameState& state);
 
+  // Picks a random legal break from state.
   Coord findRandomBreak(const GameState& state);
 
   bool hasMoveReady() const override { return m_moveReady; }
@@ -45,11 +51,16 @@ class AiPlayer : public Player {
 
   std::mt19937 m_rng;
 
+  // Picks a greedy move or break from state.
   Coord findGreedyMove(const GameState& state, bool isMove);
+  // Picks a minimax move or break from state.
   Coord findMinimaxMove(const GameState& state, bool isMove);
+  // Chooses one action from the current strategy mix.
   Coord chooseAction(const GameState& state, bool isMove);
 
+  // Scores state from this AI player's perspective.
   int evaluate(const GameState& state);
+  // Searches future states and returns the best score.
   int minimax(GameState state, int depth, Side actor, TurnPhase phase,
               int alpha, int beta);
 };

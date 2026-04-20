@@ -19,6 +19,7 @@
 
 namespace scenes {
 
+// Runs one live match scene and returns an exit code.
 inline int runLiveMatchSession(Player* p1, Player* p2,
                                const std::string& player1Name,
                                const std::string& player2Name) {
@@ -86,11 +87,13 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
   return 0;
 }
 
+// Runs a local human-vs-human match from settings.
 inline int runHumanVsHuman(const Settings& settings) {
   return runLiveMatchSession(new HumanPlayer(), new HumanPlayer(),
                              settings.gameTag, "Player 2");
 }
 
+// Returns the display label for an AI difficulty.
 inline std::string difficultyLabel(AiDifficulty difficulty) {
   switch (difficulty) {
     case AiDifficulty::Easy:
@@ -103,6 +106,7 @@ inline std::string difficultyLabel(AiDifficulty difficulty) {
   return "CPU";
 }
 
+// Runs a local human-vs-CPU match from settings.
 inline int runHumanVsCpu(const Settings& settings, AiDifficulty difficulty) {
   return runLiveMatchSession(new HumanPlayer(),
                              new AiPlayer(difficulty, Side::Player2),

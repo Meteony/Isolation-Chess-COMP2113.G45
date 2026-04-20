@@ -22,6 +22,7 @@
 
 namespace scenes {
 
+// Draws a centered status box with title and lines.
 inline void drawCenteredStatusBox(const std::string& title,
                                   const std::vector<std::string>& lines) {
   erase();
@@ -69,6 +70,7 @@ inline void drawCenteredStatusBox(const std::string& title,
   refresh();
 }
 
+// Runs the netplay scene for roomCode and returns an exit code.
 inline int runNetplay(const Settings& settings, const std::string& roomCode) {
   NcursesGuard curses;
 

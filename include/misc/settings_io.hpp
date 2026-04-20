@@ -34,7 +34,7 @@ if (!SettingsIO::saveSettings(settings)) {
 
 struct Settings {
   std::string serverIp = "localhost";
-  int serverPort = 1145;
+  int serverPort = 5050;
   std::string gameTag = "Player";
 };
 
