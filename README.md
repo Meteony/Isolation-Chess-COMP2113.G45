@@ -1,421 +1,462 @@
-# Isolation Chess Development Documentation
+# Isolation Chess
 
-Architecture baseline, staged roadmap, validation criteria, and six-member work split.
+A terminal-based C++ implementation of Isolation Chess with local play, three AI difficulty levels, replay save/load, a replay browser, and simple two-player netplay.
 
----
+This README reflects the current launcher-based version in the repository, not the older scene/app planning notes.
 
-## 0. Project reference
+## Team members (in alphabetical order)
 
-See: https://scratch.mit.edu/projects/241565591/
+- Cecilia
+- Emmanuel
+- Gino
+- Haneef
+- Noah
+- Scott
 
-## 1. Purpose and scope
+## Application description
 
-This document turns the current design discussion into a team-facing implementation guide. It defines the project structure, clarifies class boundaries, organizes development into feasible stages, and gives concrete validation targets so a new member can start contributing without hidden assumptions.
+Isolation Chess is a terminal-based C++ strategy game built with ncurses. The project supports local multiplayer, single-player matches against AI, replay saving/loading, a replay browser, and lightweight two-player netplay through a Python relay server.
 
-### Project assumptions
-- The game is written in C++.
-- Early validation should happen without curses.
-- Move and break stay as separate phases because that keeps human play interactive.
-- Replay must be built on recorded turn history, not by duplicating live gameplay logic.
-- Visual overlays and temporary effects belong to scene/UI state, not to `GameState`.
+## Reference
 
----
+Original concept reference: <https://scratch.mit.edu/projects/241565591/>
 
-## 2. Gameplay rules baseline
+## Features
 
-The project currently assumes the following rules:
+- **Local multiplayer**: Human vs Human
+- **Single-player**: Human vs CPU with **Easy**, **Medium**, and **Hard** AI
+- **Replay system**:
+  - save finished or in-progress games from the HUD command box
+  - load replays from the built-in replay browser
+  - replay stepping, reset, and autoplay
+  - replay files also preserve player names and stored UI messages
+- **Netplay**:
+  - room-based two-player connection through a lightweight Python relay server
+  - player tags exchanged during handshake
+  - in-game chat through the HUD command box
+- **Settings editor** from the launcher:
+  - server IP
+  - server port
+  - local player tag
+- **Dynamic ncurses layout**:
+  - board and HUD relayout on terminal resize
+  - board scrolling when the viewport is smaller than the full board
+- **Colorized HUD log messages** for player actions, help output, replay saves, and network status
 
-- Each turn has **two phases**:
-  1. **Move phase**: the active player moves to any legal tile in the 3×3 area centered on their current position.
-  2. **Break phase**: the active player chooses one valid tile anywhere on the board to break.
-- A legal move must land on an intact, unoccupied tile.
-- A legal break may target any intact, unoccupied tile on the board.
-- A player wins by leaving the opponent with **no legal move** on the opponent’s next turn.
-- Standing still is treated as illegal unless the team explicitly decides otherwise and updates the tests.
+## What the current launcher does
 
-### Design consequence
-Because move and break are separate and meaningful, `MatchSession` should drive the live phase flow explicitly. `GameRules` should validate and apply move and break separately.
+The main entry point is `src/main.cpp`. The launcher currently supports:
 
----
+1. Human vs Human
+2. Human vs CPU - Easy
+3. Human vs CPU - Medium
+4. Human vs CPU - Hard
+5. Netplay
+6. Replay browser
+7. Edit settings
+8. Edit room code
+0. Exit
 
-## 3. Core architecture
+The main runtime path uses:
 
-### 3.1 Layered model
+- `include/scenes/live_match_scene.hpp`
+- `include/scenes/netplay_scene.hpp`
+- `include/scenes/replay_scene.hpp`
+- `include/scenes/replay_browser.hpp`
+- `src/main.cpp`
 
-The project is split into three layers.
+## Controls
 
-#### A. Core engine
-These classes define the actual game and rules.
-- `Coord`
-- `TurnRecord`
-- `GameState`
-- `GameRules`
+## Launcher menus
 
-#### B. Control layer
-These classes drive live play and replay.
-- `Player`
-- `HumanPlayer`
-- `CpuPlayer`
-- `MatchSession`
-- `ReplaySession`
+The launcher and browser menus are currently digit-driven.
 
-#### C. UI layer
-These classes handle curses and screen logic.
-- `Scene`
-- `MainMenuScene`
-- `LiveGameScene`
-- `ReplayScene`
-- `BoardRenderer`
-- `InputOverlay`
-- `VisualEffectsState`
-- `App`
+- `1`-`8` select menu items
+- `0` exits from the main launcher
+- replay browser uses:
+  - `1`-`7` open visible replay entries
+  - `8` return
+  - `9` previous page
+  - `0` next page
 
-### 3.2 High-level relationships
+## Live match controls
 
-```text
-App
-  owns current Scene
+When the **game board is focused**:
 
-Scene
-  MainMenuScene
-  LiveGameScene -> owns MatchSession -> owns GameState + Player*
-  ReplayScene   -> owns ReplaySession
+- `WASD` move the selection cursor
+- `Enter` / `C` confirm move or break
+- `X` cancel selection and snap cursor back to the active piece
+- `Q` is not the main quit path here; use HUD commands instead
 
-MatchSession
-  uses GameRules
-  records TurnRecord history
+When the **HUD is focused**:
 
-ReplaySession
-  replays TurnRecord history using GameRules and GameState
+- `Tab` or `Esc` switches focus between board and HUD
+- `Up` / `Down` scroll the log
+- `Left` / `Right` move the command cursor
+- `Backspace` deletes in the command box
+- `Enter` submits a command or chat message
 
-BoardRenderer
-  draws GameState + optional InputOverlay + optional VisualEffectsState
+### Live match HUD commands
+
+Supported shared commands in local play and netplay:
+
+- `:h` or `:help` — show command help
+- `:save [name]` — save a replay into `./replays`
+- `:quit [name]` — save a replay, then leave the match
+- `:quit!` — leave without saving
+
+Replay names are restricted to letters, digits, `_`, `-`, and `.`.
+
+## Replay controls
+
+When the **replay board is focused**:
+
+- `A` step backward
+- `D` step forward
+- `Space` toggle autoplay
+- `R` reset replay to the beginning
+- `Q` leave replay mode
+- `Tab` or `Esc` switches focus between board and HUD
+
+When the **HUD is focused**, the command box accepts:
+
+- `:q` or `:quit` — leave replay mode
+- `:reset` — reset replay
+- `:play` — toggle autoplay
+- `:back` — step backward
+- `:forward` — step forward
+
+## Netplay
+
+Netplay is built around a simple room relay server in `server/relay_server.py`.
+
+### Wire protocol summary
+
+Client messages:
+
+- `JOIN <room> <tag>`
+- `MOVE <turn> <row> <col>`
+- `BREAK <turn> <row> <col>`
+- `CHAT <text>`
+
+Server messages:
+
+- `WELCOME <1|2>`
+- `WAITING`
+- `START <p1_tag> <p2_tag>`
+- `MOVE <turn> <row> <col>`
+- `BREAK <turn> <row> <col>`
+- `CHAT <1|2> <text>`
+- `INFO <free text>`
+- `ERROR <free text>`
+
+### Start the bundled relay server
+
+```bash
+python3 server/relay_server.py
 ```
 
-### 3.3 Responsibility split
+The bundled server listens on:
 
-| Component | Owns / does | Must not do |
-|---|---|---|
-| `GameState` | Board tiles, player positions, side to move, result; pure data accessors | Input, rendering, rule validation, temporary visual feedback |
-| `GameRules` | Legal move/break checks, `applyMove`, `applyBreak`, mobility and terminal checks | Turn loop, input handling, rendering |
-| `Player` | Provide move/break decisions through a shared interface | Mutate `GameState` directly |
-| `HumanPlayer` | Cursor, selection state, keyboard-driven decisions, overlay data | Rule authority, board ownership |
-| `CpuPlayer` | Difficulty, delay countdown, automated decisions | Blocking the main loop with `sleep()` |
-| `MatchSession` | Own live `GameState` and players; run move -> break -> next turn; record history | Draw UI directly, own menu logic |
-| `ReplaySession` | Rebuild replay state from turn history; step, reset, autoplay | Act as a live-match subclass |
-| `BoardRenderer` | Draw board and HUD from `GameState` + optional UI structs | Validate gameplay or own scenes |
-| `Scene / App` | Top-level input, update, render flow and screen switching | Contain core rule logic |
+- host: `0.0.0.0`
+- port: `5050`
 
-### 3.4 Recommended file tree
+### Important settings note
+
+The default `Settings` in `include/misc/settings_io.hpp` currently use:
+
+- `serverIp = "localhost"`
+- `serverPort = 5050`
+- `gameTag = "Player"`
+
+So if you use the bundled relay server without editing anything else, the bundled relay server and default settings already match on port `5050`.
+
+## Replay files
+
+Replay files are written into the `replays/` directory using the `.isor` extension.
+
+If no filename is provided, the game generates a timestamped replay name such as:
 
 ```text
-isolation-chess/
+replay_YYYYMMDD_HHMMSS.isor
+```
+
+If a chosen filename already exists, the replay system appends `_1`, `_2`, and so on instead of overwriting the old file.
+
+Stored replay data currently includes:
+
+- initial board state
+- board size
+- player starting positions
+- side/phase/status metadata
+- winner
+- player names
+- full turn history
+- stored UI messages
+
+## AI overview
+
+The AI implementation lives in `include/players/ai_player.hpp` and `src/players/ai_player.cpp`.
+
+Current strategy mix:
+
+- **Easy**: mostly random, sometimes greedy, rarely minimax
+- **Medium**: balanced random/greedy/minimax mix, with more minimax as turns progress
+- **Hard**: mostly minimax, and fully minimax in tighter endgames
+
+The AI also includes:
+
+- non-blocking think delays based on the game tick rate
+- greedy move selection
+- minimax with alpha-beta pruning
+- stronger endgame behavior when the board becomes sparse
+
+## Project layout
+
+This is the current layout that matters for the active launcher path.
+
+```text
+.
 ├─ include/
-│  ├─ core/      coord.hpp, enums.hpp, turn_record.hpp, game_state.hpp, game_rules.hpp
-│  ├─ players/   player.hpp, human_player.hpp, cpu_player.hpp
-│  ├─ sessions/  match_session.hpp, replay_session.hpp
-│  ├─ ui/        input_overlay.hpp, visual_effects_state.hpp, scene.hpp,
-│  │             board_renderer.hpp, live_game_scene.hpp, replay_scene.hpp, main_menu_scene.hpp
-│  └─ app/       app.hpp
+│  ├─ core/
+│  ├─ misc/
+│  ├─ players/
+│  ├─ scenes/
+│  ├─ sessions/
+│  └─ ui/
 ├─ src/
-│  ├─ core/      game_state.cpp, game_rules.cpp
-│  ├─ players/   human_player.cpp, cpu_player.cpp
-│  ├─ sessions/  match_session.cpp, replay_session.cpp
-│  ├─ ui/        board_renderer.cpp, live_game_scene.cpp, replay_scene.cpp, main_menu_scene.cpp
-│  ├─ app/       app.cpp
+│  ├─ core/
+│  ├─ misc/
+│  ├─ players/
+│  ├─ sessions/
+│  ├─ ui/
 │  └─ main.cpp
-├─ tests/        test_game_state.cpp, test_game_rules.cpp, test_match_session.cpp,
-│                test_human_player.cpp, test_cpu_player.cpp, test_replay_session.cpp, scripted_player.hpp
-├─ docs/         gameplay_rules.md, architecture, roadmap, test plan
-├─ assets/       sample_replays/
-├─ README.md
-└─ Makefile
+├─ server/
+│  └─ relay_server.py
+├─ tests/
+├─ replays/
+├─ settings.cfg
+├─ Makefile
+└─ README.md
 ```
 
----
+### Key files
 
-## 4. Staged development roadmap
+- `src/main.cpp` — launcher, settings UI, replay browser
+- `include/scenes/live_match_scene.hpp` — local match runtime
+- `include/scenes/netplay_scene.hpp` — netplay runtime and waiting/connect flow
+- `include/scenes/replay_scene.hpp` — replay runtime
+- `include/scenes/scene_common.hpp` — shared ncurses guard and command handling
+- `src/ui/board_renderer.cpp` — board rendering and viewport scrolling
+- `src/ui/game_hud.cpp` — HUD panels, log view, and command box
+- `src/sessions/match_session.cpp` — live turn flow, history, and replay export
+- `src/sessions/replay_session.cpp` — replay stepping, autoplay, and visual state
+- `src/core/replay_io.cpp` — replay file save/load
+- `include/players/network_player.hpp` — header-only network link and network player wrappers
 
-The roadmap is intentionally incremental. Each stage adds one layer of abstraction only after the previous layer is stable.
+## Non-standard libraries and dependencies
 
-| Stage | Primary work in `./src` | Primary work in `./tests` | Deliverable | Validation / exit criteria |
-|---|---|---|---|---|
-| **Stage 1** Rules, `GameState`, terminal prototype | `Coord`, enums, `GameState`, `GameRules`, `TurnRecord`, minimal turn flow. Use `std::cin/std::cout` only. | Barebones local 1v1 prototype plus core legality tests. | A playable text-mode match and a stable rule/state baseline. | Two human players can complete a legal full game in a basic terminal. Rule tests pass without curses. |
-| **Stage 2** Player abstraction + minimal curses | `Player`, `HumanPlayer`, `CpuPlayer`, `MatchSession` finalized. Minimal `ncurses` render/control loop. | Basic interactive curses test harness for human vs CPU / human vs human. | Full keyboard-controlled gameplay with CPU difficulty and non-blocking delay. | Human vs CPU is fully playable. CPU actions are always legal. App remains responsive. |
-| **Stage 3** Scene/App/renderer cleanup | `Scene`, `LiveGameScene`, `BoardRenderer`, `App`, `InputOverlay`, `VisualEffectsState`. | Regression checks to ensure stage-2 behavior still works after refactor. | A proper scene-based application structure with clean rendering boundaries. | The game still behaves correctly, but UI flow and rendering are no longer tangled with gameplay control. |
-| **Stage 4** Replay, replay scene, main menu | `ReplaySession`, `ReplayScene`, `MainMenuScene`, replay I/O if needed. | Replay regression tests and scene navigation tests. | Recorded games can be replayed and accessed from a main menu flow. | Replay reproduces live matches exactly. Menu can enter live game and replay without destabilizing the core. |
+- `ncursesw` for the terminal UI and keyboard input handling
+- POSIX sockets (`arpa/inet.h`, `sys/socket.h`, `unistd.h`) for the netplay client
+- `pthread` / C++ threads for the background network reader
+- Python 3 for the relay server in `server/relay_server.py`
 
----
+## Compilation and execution
 
-## 5. Stage details and concrete expectations
+### Requirements
 
-### 5.1 Stage 1 — core rules and terminal prototype
+- `g++` with C++17 support
+- `make`
+- `ncursesw` development package
+- Python 3 for the relay server
 
-This stage is the foundation. It should prove that the game is logically correct before any curses complexity is added.
+Example Debian/Ubuntu install:
 
-#### In `./src`
-- `Coord`
-- enums
-- `GameState`
-- `GameRules`
-- `TurnRecord`
-- minimal live turn flow (`MatchSession` or equivalent)
-
-#### In `./tests`
-- barebones `std::cin/std::cout` 1v1 game
-- move legality tests
-- break legality tests
-- terminal detection tests
-- copy and assignment tests for `GameState`
-
-#### Deliverable
-- local 1v1 fully playable in terminal text mode
-- core tests pass
-
-#### Validation
-- no curses required
-- both players can finish a full legal game
-- winner is detected correctly
-
-**Important note:** Stage 1 should include both manual play and programmatic tests. The manual prototype proves usability; the tests prove correctness.
-
-### 5.2 Stage 2 — `Player` hierarchy and minimal curses gameplay
-
-Once the rules and state are stable, introduce the `Player` abstraction. `HumanPlayer` and `CpuPlayer` must share one interface.
-
-#### In `./src`
-- `Player`
-- `HumanPlayer`
-- `CpuPlayer`
-- `MatchSession` finalized if not already done
-- CPU difficulty and non-blocking delay logic
-
-#### In `./tests`
-- minimal curses loop
-- human vs CPU
-- human vs human if useful to keep
-
-#### Deliverable
-- keyboard-controlled curses gameplay
-- human vs CPU with multiple difficulties
-- still visually simple
-
-#### Validation
-- full playable match in curses
-- CPU always outputs legal actions
-- delay works without freezing the app
-
-#### Recommended loop sketch
-
-```cpp
-while (running) {
-    int ch = getch();
-
-    if (current player is human) {
-        currentPlayer->handleInput(ch);
-    }
-
-    session.update();
-
-    clear();
-    draw board from session.state();
-    draw side / phase / winner info;
-    refresh();
-}
+```bash
+sudo apt install g++ make libncursesw5-dev python3
 ```
 
-### 5.3 Stage 3 — formalize scenes and renderer boundaries
+### Compile and run the main launcher
 
-This stage is not about new rules. It is about cleaning the architecture so later features can fit naturally.
-
-#### In `./src`
-- `Scene`
-- `LiveGameScene`
-- `BoardRenderer`
-- `App`
-- `InputOverlay`
-- `VisualEffectsState`
-
-#### Deliverable
-- proper scene-based game structure
-- cleaner renderer separation
-- UI logic no longer mixed into core/gameplay logic
-
-#### Validation
-- game still behaves exactly like Stage 2
-- architecture is cleaner, not just prettier
-
-### 5.4 Stage 4 — replay, replay scene, and menu flow
-
-Replay should be added only after live gameplay is stable. It must reuse recorded turn history and the same rule/state model.
-
-#### In `./src`
-- `ReplaySession`
-- `ReplayScene`
-- `MainMenuScene`
-- replay file I/O if needed
-
-#### Deliverable
-- finished games can be replayed
-- replay scene works
-- main menu can enter live game and replay
-
-#### Validation
-- replay reproduces live match exactly
-- timing metadata only affects pacing, not game correctness
-
----
-
-## 6. Replay data model clarification
-
-A live game replay can be reconstructed from a sequence of completed turns. The core replay record should stay separate from optional timing metadata.
-
-### Core record
-
-```cpp
-struct TurnRecord {
-    Side actor;
-    Coord moveCoord;
-    Coord breakCoord;
-};
+```bash
+make launcher
+./launcher
 ```
 
-### Optional timing-aware record
+### Other build targets
 
-```cpp
-struct TimedTurnRecord {
-    TurnRecord turn;
-    int moveThinkTicks;
-    int breakThinkTicks;
-};
+```bash
+make manual_curses_match
+make manual_board_renderer
+make manual_game_ui
+make manual_replay_ui
+make netplay
 ```
 
-### Important correction
-Turn history solves **replay** and **logging**. It does **not** replace validation. Validation still comes from `GameRules` operating on the current `GameState`.
+`make clean` removes the built binaries listed in the Makefile.
 
----
+### Netplay server
 
-## 7. Concrete test cases and validation
+Run the relay server in a separate terminal before testing online play:
 
-These tests should exist before the team claims a stage is complete.
+```bash
+python3 server/relay_server.py
+```
 
-| Module | Test ID | Scenario | Expected result |
-|---|---|---|---|
-| `GameState` | GS-01 | Initialize a 5×5 board | All tiles are `Intact` |
-| `GameState` | GS-04 | Copy-construct from a state with broken tiles, then modify original | Copied state remains unchanged |
-| `GameRules` | GR-M03 | Attempt move outside 3×3 neighborhood | Move is illegal |
-| `GameRules` | GR-B03 | Attempt to break the active player tile | Break is illegal |
-| `GameRules` | GR-T02 | Completely surround a player with no legal move | Terminal/mobility check reports no move |
-| `MatchSession` | MS-02 | Scripted player returns a legal move | Phase advances from Move to Break |
-| `MatchSession` | MS-04 | Legal break after a legal move | `TurnRecord` is added, side switches, phase returns to Move |
-| `MatchSession` | MS-06 | Break leaves opponent with no legal move | Session finishes and winner is set |
-| `HumanPlayer` | HP-02 | Simulated key input moves cursor | Overlay cursor updates correctly |
-| `CpuPlayer` | CP-01 | Delay is 5 ticks, only 4 updates occur | CPU is not ready yet |
-| `ReplaySession` | RS-04 | Replay a real match from initial state plus recorded history | Final replay state matches final live state exactly |
+### Replay files
 
----
+Saved replay files are stored in `replays/` and can be opened from the launcher replay browser.
 
-## 8. Team work split
+## Settings file
 
-A clean split for a four-person team would be:
-- Core engineer: `GameState`, `GameRules`, state/rule tests
-- Session engineer: `Player` base, `HumanPlayer`, `MatchSession`, scripted-player tests
-- UI engineer: `Scene`, `App`, `BoardRenderer`, `LiveGameScene`, `MainMenuScene`
-- Features engineer: `ReplaySession`, `ReplayScene`, `CpuPlayer`, difficulty tuning, optional extras
+The launcher reads and writes `settings.cfg` using `SettingsIO`.
 
----
+Expected keys:
 
-## 9. Minimum acceptable scope
+```ini
+server_ip=localhost
+server_port=5050
+game_tag=Player
+```
 
-The project is in good shape once it has:
-- correct move legality
-- correct break legality
-- correct win detection
-- playable local match
-- stable scene-based curses loop
-- replay based on `TurnRecord`
-- at least one working CPU level if time permits
+The launcher will also create default settings if loading fails.
 
-Cut stretch features before risking the baseline. The first things to cut are replay preview in the menu, hard CPU, online mode, and advanced effects.
+## Rendering and layout notes
 
----
+- The board uses a 4x2 tile style in ncurses.
+- The HUD contains three sections:
+  - status box
+  - scrollable message log
+  - command input box
+- Replay mode expands the HUD status section to show progress, playback speed, and autoplay status.
+- The board viewport can scroll independently when the visible area is smaller than the logical board.
 
-## 10. Stage fit and work split for a 6-member team
+## Repository state note
 
-With 6 members, the safest structure is to split by both stage and specialty. The goal is to let the strongest core people stabilize the rules early, while UI and feature-oriented members scaffold their layers without blocking the core.
+This repository still contains some older planning or prototype files, including earlier `Scene` / `App` abstractions and deprecated test files. The current shipped launcher path is the one described above under **What the current launcher does**.
 
-| Stage | Best suited member type | Why this stage fits them | Recommended 6-member allocation |
-|---|---|---|---|
-| **Stage 1** Rules, `GameState`, terminal prototype | Core logic members, careful debuggers, people strongest at correctness and edge cases | This stage is deterministic and rule-heavy. It rewards people who like invariants, board state, legal/illegal cases, and test writing more than visual polish. | **2 members**: Member A — `GameState` + memory management; Member B — `GameRules` + core tests |
-| **Stage 2** Player abstraction + minimal curses | Control-flow / OOP members, people who can bridge state and interaction | This stage connects the rules to actual decision-making and turn flow. It suits members who can make human and CPU behavior fit one clean interface. | **2 members**: Member C — `Player` base + `HumanPlayer`; Member D — `MatchSession` + `CpuPlayer` delay/logic |
-| **Stage 3** Scene/App/renderer cleanup | UI / architecture members, people comfortable with `ncurses` and display flow | This stage is about structure, rendering boundaries, and a stable input-update-render loop. It suits members who care about clean screen logic and modular UI. | **1 member**: Member E — `Scene` / `App` / `BoardRenderer` / `LiveGameScene` |
-| **Stage 4** Replay, replay scene, main menu | Feature / systems member, someone comfortable with history, I/O, and state reconstruction | Replay depends on earlier future-proofing, so this suits someone who can build on stable abstractions without leaking replay logic into live gameplay. | **1 member**: Member F — `ReplaySession` / `ReplayScene` / `MainMenuScene` / replay I/O |
+## Known rough edges worth keeping in mind
 
-### Parallelism advice for 6 members
+- Netplay still depends on running the separate Python relay server before connecting.
+- Some older UI scaffolding files are still present even though `src/main.cpp` now drives the active launcher flow directly.
+- There are both `tests/` files and some older `src/tests/` files in the tree from earlier iterations.
 
-In Week 1–2, Members E and F should scaffold non-invasive files such as `Scene` / `App` skeletons, replay headers, docs, Makefile, and test harness support while Members A–D stabilize the core. They should avoid changing `GameRules` or `MatchSession` interfaces until the core is frozen.
+## Credits
 
-### Suggested member-to-workstream map
-
-- **Member A** — `GameState`, dynamic memory, copy semantics, state tests
-- **Member B** — `GameRules`, legality checks, terminal-state tests
-- **Member C** — `Player` base, `HumanPlayer`, input overlay production
-- **Member D** — `MatchSession`, `CpuPlayer`, scripted-player integration tests
-- **Member E** — `Scene`, `App`, `BoardRenderer`, `LiveGameScene`, curses loop polish
-- **Member F** — `ReplaySession`, `ReplayScene`, `MainMenuScene`, replay serialization or I/O
-
-If one member is noticeably stronger than the others, that person should act as integration lead and review any change that touches shared interfaces.
-
----
-
-## 11. Recommended implementation order
-
-1. `coord.hpp`, `enums.hpp`, `turn_record.hpp`
-2. `game_state.hpp/.cpp`
-3. `game_rules.hpp/.cpp`
-4. scripted-player tests
-5. `match_session.hpp/.cpp`
-6. `human_player.hpp/.cpp`
-7. `board_renderer.hpp/.cpp`
-8. `scene.hpp`, `live_game_scene.hpp/.cpp`, `app.hpp/.cpp`
-9. `replay_session.hpp/.cpp`
-10. `cpu_player.hpp/.cpp`
-
-This order keeps dependencies sane and lets the team validate the core before adding higher-level UI and replay features.
+Built as a COMP2113 group project around a terminal-based Isolation Chess implementation, with local play, AI, replay support, and lightweight netplay.
 
 
-## 12. AI methods
+## Architecture overview
 
-Add an `AiPlayer` to handle single-player matches. You can choose from three difficulty levels:
+The current codebase is organized in layers rather than around one giant game loop file. The easiest way to read it is from the outside in:
 
-### random
-The AI moves and breaks tiles completely at random. It’s mostly there to help new players get used to the mechanics and to satisfy our project's "random events" requirement.
+```text
+main.cpp / scene entry points
+  -> sessions
+    -> players + game rules + state
+  -> UI renderers
+    -> ncurses screen
+```
 
-### greedy
-This version is a "Greedy" AI. Before making a move, it scans the board and picks the spot that gives it the most possible moves in the next turn. It's harder to trap, but it doesn't try to block you yet.
+In practice, each frame follows the same pattern:
 
-### minimax
-The most challenging mode. It uses a **Minimax algorithm** with **Alpha-Beta pruning** to simulate multiple turns ahead. It doesn't just look for its own path--->it actively tries to cut you off while keeping its own options open.
+1. a scene reads input from `KeyQueue`
+2. the scene forwards board input to a session
+3. the session updates the authoritative state
+4. `BoardRenderer` and `GameHud` draw that state
+5. the HUD may emit a command string back to the scene
+6. the scene handles high-level actions such as save, quit, chat, or replay browser navigation
 
-## 13. AI Difficulties
+### Layer responsibilities
 
-For the AI part of this project, I didn't want the computer to just move randomly or be a perfect machine. I designed it to act more like a real player who makes mistakes sometimes but gets serious when the game gets tight.
+#### 1. Scene layer
 
-### 1. The Three AI Methods
-I wrote three different functions to handle how the computer chooses its move:
-* **Random Move**: The computer just picks any legal spot. This represents a "mistake" or a casual move.
-* **Greedy Move**: The computer looks at the board and picks the spot that leaves it with the most moving options for the next turn.
-* **Minimax Move**: This is the "smart" mode. It uses a search tree to find the best way to block the player and win.
+The scene headers in `include/scenes/` are thin runtime wrappers. They own the outer loop for a mode and coordinate input, layout, rendering, and top-level commands.
 
-### 2. Difficulty Logic & Probability Table
-Instead of using just one method, the AI chooses which one to use based on probabilities. This makes the game feel more natural.
+- `live_match_scene.hpp` runs local human-vs-human and human-vs-AI matches
+- `netplay_scene.hpp` adds connection setup, waiting-room flow, chat handling, and network error handling
+- `replay_scene.hpp` runs replay playback and replay HUD commands
+- `replay_browser.hpp` is the file picker for saved `.isor` replays
+- `scene_common.hpp` contains shared helpers such as the ncurses guard and common save/quit command parsing
 
-| Difficulty | Random | Greedy | Minimax | Special Logic |
-| :--- | :--- | :--- | :--- | :--- |
-| **Easy** | 60% | 30% | 10% | Uses Minimax if AI has < 2 moves left. |
-| **Medium** | 20% | 50% | 30% | Minimax weight increases as the game progresses. |
-| **Hard** | 0% | 20% | 80% | Locks to 100% Minimax if board is 40% empty. |
+These files deliberately do not contain the detailed game rules. They are mode orchestrators.
 
-### 3. Human-like Behavior
-* **Thinking Delay**: The computer waits for a short moment (0.3s to 1s) before moving so it doesn't feel like a robot.
-* **Focus Level**: If you make a very strong move against the AI, it will increase its "Focus" and use the Minimax logic for the next turn to counter you.
+#### 2. Session layer
+
+The session classes are the heart of the runtime model. They sit between input/rendering and the lower-level rules/state code.
+
+- `MatchSession` owns a live match
+- `ReplaySession` owns replay playback state
+
+`MatchSession` stores more than just the board: it also tracks player names, UI messages, turn history, the current visual cursor state, and replay export data. `ReplaySession` keeps a separate replay timeline, playback settings, autoplay timing, and replay-only HUD information.
+
+This is why the project keeps `GameState` and `MatchSession` separate. `GameState` is intentionally compact and easy to copy for rule checks and AI search, while `MatchSession` is the broader runtime container used by the UI and replay system.
+
+#### 3. Core rules/state layer
+
+The `include/core/` and `src/core/` files define the rule engine and persistent game data structures.
+
+- `GameState` is the canonical board snapshot
+- `GameRules` validates and applies moves and breaks
+- `TurnRecord` stores per-turn actions and timing data
+- `ReplayData` packages everything needed to save or reload a session
+- `ReplayIO` serializes replay files to disk
+
+A useful way to think about this layer is: it knows what the game *is*, but not how it should be drawn on screen.
+
+#### 4. Player layer
+
+All player types share the same `Player` interface, which lets `MatchSession` drive local, AI, and remote opponents in almost the same way.
+
+- `HumanPlayer` turns keyboard input into pending move/break selections
+- `AiPlayer` chooses actions with random, greedy, or minimax-based logic depending on difficulty
+- `NetworkHumanPlayer` and `NetworkPlayer` adapt the same turn model to remote play through `NetworkLink`
+
+That common interface is what keeps netplay from needing a separate copy of the game rules or turn engine.
+
+#### 5. UI layer
+
+The UI is split into two main renderers:
+
+- `BoardRenderer` draws the framed board, pieces, cursor overlays, and scrolling viewport
+- `GameHud` draws the status panel, log panel, and command input box
+
+Both renderers are fed by sessions rather than mutating the game directly. This keeps rendering mostly one-way: sessions produce state, and the UI visualizes it.
+
+`ui_resize_helper.hpp` sits beside them and computes the board/HUD size split on terminal resize.
+
+### How the main runtime fits together
+
+#### Local game flow
+
+For a normal match, `src/main.cpp` selects a mode, constructs the appropriate players, and calls `runLiveMatchSession(...)`. The scene then owns:
+
+- the ncurses lifetime
+- focus switching between board and HUD
+- input dispatch
+- layout refresh on `KEY_RESIZE`
+- top-level commands such as `:save`, `:quit`, and `:help`
+
+The actual turn progression still lives inside `MatchSession::update(...)`.
+
+#### Replay flow
+
+Replay mode loads a `ReplayData` object through `ReplayIO`, builds a `ReplaySession`, and then reuses the same board/HUD rendering approach as live play. This reuse is one of the strongest architectural choices in the project: replay mode is not a totally separate UI stack. It is mostly the same screen structure backed by a different session type.
+
+#### Netplay flow
+
+Netplay keeps the same match/session/rendering structure and swaps in a different player backend. `NetworkLink` handles the socket connection, background reader thread, parsed inbound queues, and outbound text commands. The scene polls that link each frame, posts network messages into the HUD log, and lets `MatchSession` continue to run the same turn model as local play.
+
+That means the network code is acting as a transport adapter, not as a second game engine.
+
+### Why this split is useful
+
+This architecture makes the project easier to extend without rewriting the whole loop:
+
+- new player types can plug into the `Player` interface
+- replay support works because the turn/session data is already separated from rendering
+- board and HUD rendering can evolve without rewriting move validation
+- netplay can reuse the same match logic instead of duplicating game rules on the scene side
+
+It also explains why some files look broader than others: scenes coordinate, sessions own runtime state, core files define the rules, and UI files only render.
+
