@@ -27,6 +27,9 @@ int messageTagToPair(const std::string& tag) {
   if (tag == "MAGENTA") return CP_MSG_MAGENTA;
   if (tag == "CYAN") return CP_MSG_CYAN;
   if (tag == "WHITE") return CP_MSG_WHITE;
+
+  if (tag == "P1") return CP_P1;
+  if (tag == "P2") return CP_P2;
   return 0;
 }
 
@@ -319,10 +322,9 @@ void GameHud::drawCommand(bool winFocused) {
   const int innerLeft = m_winPos.col + 2;
   const int innerWidth = m_size.col - 4;
 
-  if (!winFocused) {
+  if (!winFocused && m_command.empty()) {
     drawText(innerRow, innerLeft,
              padOrTrimRight("Esc to use commands", innerWidth));
-    return;
   }
 
   std::string visible = m_command;
@@ -335,6 +337,8 @@ void GameHud::drawCommand(bool winFocused) {
   visible = m_command.substr(viewStart, static_cast<size_t>(innerWidth));
   visible = padOrTrimRight(visible, innerWidth);
   drawText(innerRow, innerLeft, visible);
+
+  if (!winFocused) return; /*Skip cursor blink for unfocused HUD */
 
   m_flashOn = ((m_tick / (int)(0.8 * kGameFps)) % 2 == 0);
   if (!m_flashOn) return;

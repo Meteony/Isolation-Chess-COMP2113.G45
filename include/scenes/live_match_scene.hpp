@@ -61,25 +61,37 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
 
     if (std::optional<std::string> cmd = hud.consumeCommand()) {
       focus = FocusTarget::Game;
-      const bool handled =
-          handleStandardSaveQuitCommand(session, *cmd, running);
-      if (!handled) {
-        session.postUiMessage("<YELLOW>[!] Invalid command: " + trimCopy(*cmd));
+      const std::string s = trimCopy(*cmd);
+
+      if (!s.empty()) {
+        const bool handled = handleStandardSaveQuitCommand(session, s, running);
+        if (handled) {
+          // nothing else
+        } else if (s[0] == ':') {
+          session.postUiMessage("<YELLOW>[!] Invalid command: " + s);
+        } else {
+          std::string tag = "Player";
+          if (std::optional<Settings> settings = SettingsIO::loadSettings()) {
+            if (!settings->gameTag.empty()) {
+              tag = settings->gameTag;
+            }
+          }
+          session.postUiMessage("<P1>" + tag + ": " + s);
+        }
       }
     }
 
     const int uiBottom = std::max(board.bottomRow(), hud.bottomRow());
     const int uiWidth = board.size().col + hud.size().col;
     if (focus == FocusTarget::Game) {
-      drawBottomKeyTip(uiBottom, uiWidth,
-                       {"Tab/Esc HUD", "WASD move", "Enter confirm",
-                        "X cancel"});
+      drawBottomKeyTip(
+          uiBottom, uiWidth,
+          {"[Tab/Esc] HUD", "[WASD] Move", "[C] Confirm", "[Arrows] Scroll"});
     } else {
       drawBottomKeyTip(uiBottom, uiWidth,
-                       {"Tab/Esc board", "Up/Down scroll",
-                        "Left/Right edit", "Enter run"});
+                       {"[Tab/Esc] Resume", "[:h] Help", "[↑↓] Scroll",
+                        "[←→] Cursor", "[Enter] Run/Send"});
     }
-
     refresh();
     napms(kFrameMs);
   }

@@ -55,7 +55,7 @@ class ReplaySession {
   // Returns true if a backward step is available.
   bool hasPreviousAction() const;
   // Steps one replay action forward. Returns true on success.
-  bool stepForward();   // applies next action, false if none available
+  bool stepForward();  // applies next action, false if none available
   // Steps one replay action backward. Returns true on success.
   bool stepBackward();  // undo last action, false if none available
   // Rebuilds replay state up to the target point.
@@ -76,6 +76,9 @@ class ReplaySession {
  public:
   // Creates a replay session from saved replay data.
   explicit ReplaySession(const ReplayData& data);
+
+  // Jumps to the start of a 1-based turn number.
+  bool goToTurn(size_t turnNumber);
 
   // Returns the display name for side.
   const std::string& playerName(Side side) const;

@@ -62,13 +62,12 @@ void MatchSession::update(int inputChar) {
     return std::to_string(whole) + "." + frac + "s";
   };
 
-  auto coloredPlayerName =
-      [&](Side side) { /*For auto UI turn messages too*/
-                       return ((side == Side::Player1)
-                                   ? std::string("<YELLOW>")
-                                   : std::string("<BLUE>")) +
-                              playerName(side);
-      };
+  auto coloredPlayerName = [&](Side side) { /*For auto UI turn messages too*/
+                                            return ((side == Side::Player1)
+                                                        ? std::string("<P1>")
+                                                        : std::string("<P2>")) +
+                                                   playerName(side);
+  };
 
   if (m_state.status() == SessionStatus::Finished) {
     m_visualState.cursorVisible = false;

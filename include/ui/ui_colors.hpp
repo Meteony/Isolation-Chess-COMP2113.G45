@@ -39,10 +39,13 @@ inline void ensureUiColorsInitialized() {
       init_pair(CP_FRAME, 246, -1);
     } else
       init_pair(CP_FRAME, COLOR_WHITE, -1);
+
     if (COLORS >= 256) {
-      init_pair(CP_FRAME_FOCUSED, COLOR_WHITE, -1);
+      init_pair(CP_FRAME_FOCUSED, 202, -1);
+      // init_pair(CP_FRAME_FOCUSED, COLOR_WHITE, -1);
     } else
-      init_pair(CP_FRAME_FOCUSED, COLOR_WHITE, -1);
+      init_pair(CP_FRAME_FOCUSED, COLOR_YELLOW, -1);
+    // init_pair(CP_FRAME_FOCUSED, COLOR_WHITE, -1);
 
     init_pair(CP_CURSOR_HL, COLOR_GREEN, -1);
     init_pair(CP_PHASE_MOVE, COLOR_WHITE, -1);

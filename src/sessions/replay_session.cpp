@@ -70,6 +70,17 @@ const std::string& ReplaySession::playerName(Side side) const {
 
 const GameState& ReplaySession::state() const { return r_state; }
 
+bool ReplaySession::goToTurn(size_t turnNumber) {
+  if (turnNumber == 0 || turnNumber > r_history.size()) {
+    return false;
+  }
+
+  setAutoPlay(false);
+  replayToState(turnNumber - 1, TurnPhase::NewTurn);
+  updateVisualState();
+  return true;
+}
+
 TurnPhase ReplaySession::phase() const { return r_state.phase(); }
 
 const std::vector<TurnRecord>& ReplaySession::history() const {

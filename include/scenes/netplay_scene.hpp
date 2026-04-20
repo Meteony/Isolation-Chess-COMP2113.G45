@@ -154,8 +154,7 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
 
     netplay::NetChat chat;
     while (link.popChat(chat)) {
-      const std::string color =
-          (chat.side == Side::Player1) ? "<YELLOW>" : "<BLUE>";
+      const std::string color = (chat.side == Side::Player1) ? "<P1>" : "<P2>";
       session.postUiMessage(color + session.playerName(chat.side) + ": " +
                             chat.text);
     }
@@ -190,11 +189,11 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
     if (focus == FocusTarget::Game) {
       drawBottomKeyTip(
           uiBottom, uiWidth,
-          {"Tab/Esc chat", "WASD move", "Enter confirm", "X cancel"});
+          {"[Tab/Esc] Chat", "[WASD] Move", "[C] Confirm", "[Arrows] Scroll"});
     } else {
-      drawBottomKeyTip(
-          uiBottom, uiWidth,
-          {"Tab/Esc board", "Up/Down scroll", "Left/Right edit", "Enter send"});
+      drawBottomKeyTip(uiBottom, uiWidth,
+                       {"[Tab/Esc] Resume", "[:h] Help", "[↑↓] Scroll",
+                        "[←→] Cursor", "[Enter] Run/Send"});
     }
 
     if (std::optional<std::string> cmd = hud.consumeCommand()) {
@@ -210,18 +209,13 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
         goto RefreshAndSleep;
       }
 
-      if (s.empty()) {
-        session.postUiMessage("<YELLOW>[i] Returned to game");
-        goto RefreshAndSleep;
-      }
-
       if (!link.sendChat(s)) {
         session.postUiMessage("<MAGENTA>[!] Failed to send chat");
         goto RefreshAndSleep;
       }
 
       const std::string myColor =
-          (link.mySide() == Side::Player1) ? "<YELLOW>" : "<BLUE>";
+          (link.mySide() == Side::Player1) ? "<P1>" : "<P2>";
       session.postUiMessage(myColor + session.playerName(link.mySide()) + ": " +
                             s);
     }
