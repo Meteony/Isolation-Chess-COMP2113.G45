@@ -82,8 +82,6 @@ inline void drawCenteredStatusBox(const std::string& title,
 // Runs the netplay scene for roomCode and returns an exit code.
 inline int runNetplay(const Settings& settings, const std::string& roomCode,
                       BlizzardEffect* effect = nullptr) {
-  NcursesGuard curses;
-
   netplay::NetworkLink link;
   drawCenteredStatusBox(" Netplay ",
                         {"Connecting to " + settings.serverIp + ":" +

@@ -26,8 +26,6 @@ inline int runReplay(const std::string& replayPath,
     return 1;
   }
 
-  NcursesGuard curses;
-
   ReplaySession replay(*replayData);
   BoardRenderer board;
   GameHud hud;

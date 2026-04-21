@@ -638,7 +638,6 @@ LaunchRequest runLauncher(Settings& settings, std::string& roomCode,
   preview.scan();
   preview.loadRandom();
 
-  scenes::NcursesGuard curses;
   ensureUiColorsInitialized();
   if (effect) effect->startBlockingTransition();
 
@@ -881,6 +880,9 @@ int main() {
   if (!SettingsIO::loadSettings()) {
     SettingsIO::saveSettings(settings);
   }
+
+  scenes::NcursesGuard curses;
+
   std::string roomCode = "room-123";
 
   BlizzardEffect* effect = new BlizzardEffect;

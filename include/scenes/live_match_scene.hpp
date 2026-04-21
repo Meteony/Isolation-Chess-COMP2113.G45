@@ -25,8 +25,6 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
                                const std::string& player1Name,
                                const std::string& player2Name,
                                BlizzardEffect* effect = nullptr) {
-  NcursesGuard curses;
-
   MatchSession session(9, 11, p1, p2, player1Name, player2Name);
   BoardRenderer board;
   GameHud hud;
