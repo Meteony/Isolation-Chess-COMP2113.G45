@@ -511,3 +511,75 @@ std::optional<ReplayData> ReplayIO::loadReplay(const std::string& filepath) {
   return ReplayData{initialState, history,     uiMessages,
                     winnerRaw,    player1Name, player2Name};
 }
+
+std::optional<ReplayMetadata> ReplayIO::loadReplayMetadata(
+    const std::string& filepath) {
+  std::ifstream file(filepath);
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+
+  ReplayMetadata meta;
+  std::string line;
+  bool headerFound = false;
+  bool endHeaderFound = false;
+
+  while (std::getline(file, line)) {
+    if (line == "HEADER") {
+      headerFound = true;
+      continue;
+    }
+
+    if (!headerFound) {
+      continue;
+    }
+
+    if (line == "END_HEADER") {
+      endHeaderFound = true;
+      break;
+    }
+
+    if (line == "TILES") {
+      // Metadata path does not care about board contents.
+      while (std::getline(file, line) && line != "END_TILES") {
+      }
+      continue;
+    }
+
+    try {
+      if (line.rfind("rows=", 0) == 0) {
+        meta.rows = std::stoi(line.substr(5));
+      } else if (line.rfind("cols=", 0) == 0) {
+        meta.cols = std::stoi(line.substr(5));
+      } else if (line.rfind("winner=", 0) == 0) {
+        meta.winner = std::stoi(line.substr(7));
+      } else if (line.rfind("player1_name=", 0) == 0) {
+        meta.player1Name = line.substr(13);
+        if (!isValidPlayerName(meta.player1Name)) {
+          return std::nullopt;
+        }
+      } else if (line.rfind("player2_name=", 0) == 0) {
+        meta.player2Name = line.substr(13);
+        if (!isValidPlayerName(meta.player2Name)) {
+          return std::nullopt;
+        }
+      }
+    } catch (...) {
+      return std::nullopt;
+    }
+  }
+
+  if (!headerFound || !endHeaderFound) {
+    return std::nullopt;
+  }
+
+  if (meta.rows <= 0 || meta.cols <= 0) {
+    return std::nullopt;
+  }
+
+  if (meta.winner != -1 && meta.winner != 0 && meta.winner != 1) {
+    return std::nullopt;
+  }
+
+  return meta;
+}

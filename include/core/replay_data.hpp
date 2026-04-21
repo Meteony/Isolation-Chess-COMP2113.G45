@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -15,3 +16,14 @@ struct ReplayData {
   std::string player1Name;
   std::string player2Name;
 };
+
+struct ReplayMetadata {
+  int rows = -1;
+  int cols = -1;
+  int winner = -1;  // -1 none, 0 p1, 1 p2
+  std::string player1Name;
+  std::string player2Name;
+};
+
+static std::optional<ReplayMetadata> loadReplayMetadata(
+    const std::string& filepath);

@@ -11,6 +11,8 @@ class ReplayIO {
                          const std::string& outFilename = "");
   // Loads a replay from filepath. Returns parsed data or nullopt.
   static std::optional<ReplayData> loadReplay(const std::string& filepath);
+  static std::optional<ReplayMetadata> loadReplayMetadata(
+      const std::string& filepath);
 
  private:
   static const std::string REPLAY_DIR;

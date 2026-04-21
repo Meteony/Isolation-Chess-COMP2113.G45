@@ -7,6 +7,7 @@
 
 #include "core/replay_io.hpp"
 #include "core/time.hpp"
+#include "misc/blizzard_transition.hpp"
 #include "misc/key_queue.hpp"
 #include "misc/settings_io.hpp"
 #include "scenes/scene_common.hpp"
@@ -18,7 +19,8 @@
 namespace scenes {
 
 // Runs a replay scene for replayPath and returns an exit code.
-inline int runReplay(const std::string& replayPath) {
+inline int runReplay(const std::string& replayPath,
+                     BlizzardEffect* effect = nullptr) {
   const std::optional<ReplayData> replayData = ReplayIO::loadReplay(replayPath);
   if (!replayData) {
     return 1;
@@ -157,6 +159,7 @@ inline int runReplay(const std::string& replayPath) {
           {"[Tab] Back", "[Arrows] Edit", "[Enter] Send", "[:h] Help"});
     }
 
+    if (effect) effect->updateAndDraw();
     refresh();
     napms(kFrameMs);
   }

@@ -11,6 +11,7 @@
 
 #include "core/enums.hpp"
 #include "core/time.hpp"
+#include "misc/blizzard_transition.hpp"
 #include "misc/key_queue.hpp"
 #include "misc/settings_io.hpp"
 #include "players/network_player.hpp"
@@ -22,6 +23,9 @@
 
 namespace scenes {
 
+constexpr int kCanvasMaxRows = 21;
+constexpr int kCanvasMaxCols = 71;
+
 // Draws a centered status box with title and lines.
 inline void drawCenteredStatusBox(const std::string& title,
                                   const std::vector<std::string>& lines) {
@@ -31,15 +35,15 @@ inline void drawCenteredStatusBox(const std::string& title,
   int maxCols = 0;
   getmaxyx(stdscr, maxRows, maxCols);
 
+  /*
+  maxRows = std::min(maxRows, kCanvasMaxRows);
+  maxCols = std::min(maxCols, kCanvasMaxCols);
+*/
   int innerWidth = 0;
   for (const std::string& line : lines) {
-    if (static_cast<int>(line.size()) > innerWidth) {
-      innerWidth = static_cast<int>(line.size());
-    }
+    innerWidth = std::max(innerWidth, static_cast<int>(line.size()));
   }
-  if (static_cast<int>(title.size()) > innerWidth) {
-    innerWidth = static_cast<int>(title.size());
-  }
+  innerWidth = std::max(innerWidth, static_cast<int>(title.size()));
   innerWidth = std::max(innerWidth + 2, 32);
 
   const int boxWidth = innerWidth + 2;
@@ -47,20 +51,25 @@ inline void drawCenteredStatusBox(const std::string& title,
   const int top = std::max(0, (maxRows - boxHeight) / 2);
   const int left = std::max(0, (maxCols - boxWidth) / 2);
 
-  mvaddch(top, left, ACS_ULCORNER);
-  for (int x = 1; x < boxWidth - 1; ++x) mvaddch(top, left + x, ACS_HLINE);
-  mvaddch(top, left + boxWidth - 1, ACS_URCORNER);
+  ensureUiColorsInitialized();
+  attron(COLOR_PAIR(CP_FRAME_FOCUSED));
+
+  mvaddstr(top, left, "╭");
+  mvaddstr(top, left + boxWidth - 1, "╮");
+  mvaddstr(top + boxHeight - 1, left, "╰");
+  mvaddstr(top + boxHeight - 1, left + boxWidth - 1, "╯");
+
+  for (int x = 1; x < boxWidth - 1; ++x) {
+    mvaddstr(top, left + x, "─");
+    mvaddstr(top + boxHeight - 1, left + x, "─");
+  }
 
   for (int y = 1; y < boxHeight - 1; ++y) {
-    mvaddch(top + y, left, ACS_VLINE);
-    mvaddch(top + y, left + boxWidth - 1, ACS_VLINE);
+    mvaddstr(top + y, left, "│");
+    mvaddstr(top + y, left + boxWidth - 1, "│");
   }
 
-  mvaddch(top + boxHeight - 1, left, ACS_LLCORNER);
-  for (int x = 1; x < boxWidth - 1; ++x) {
-    mvaddch(top + boxHeight - 1, left + x, ACS_HLINE);
-  }
-  mvaddch(top + boxHeight - 1, left + boxWidth - 1, ACS_LRCORNER);
+  attroff(COLOR_PAIR(CP_FRAME_FOCUSED));
 
   mvprintw(top, left + 2, "%s", title.c_str());
   for (std::size_t i = 0; i < lines.size(); ++i) {
@@ -71,7 +80,8 @@ inline void drawCenteredStatusBox(const std::string& title,
 }
 
 // Runs the netplay scene for roomCode and returns an exit code.
-inline int runNetplay(const Settings& settings, const std::string& roomCode) {
+inline int runNetplay(const Settings& settings, const std::string& roomCode,
+                      BlizzardEffect* effect = nullptr) {
   NcursesGuard curses;
 
   netplay::NetworkLink link;
@@ -144,13 +154,18 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
   bool running = true;
   bool fatalShown = false;
 
+  if (effect) effect->startBlockingTransition();
+
   while (running) {
     const int ch = input.nextKeyOrErr();
 
     std::string msg;
+    // Debug [net] messages
+    /*
     while (link.popInfo(msg)) {
       session.postUiMessage("<YELLOW>" + msg);
     }
+    */
 
     netplay::NetChat chat;
     while (link.popChat(chat)) {
@@ -221,11 +236,13 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode) {
     }
 
   RefreshAndSleep:
+    if (effect) effect->updateAndDraw();
     refresh();
     napms(kFrameMs);
   }
 
   link.disconnect();
+  // if (effect) effect->startBlockingTransition();
   return 0;
 }
 

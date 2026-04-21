@@ -7,6 +7,7 @@
 #include <string>
 
 #include "core/enums.hpp"
+#include "misc/blizzard_transition.hpp"
 #include "misc/key_queue.hpp"
 #include "misc/settings_io.hpp"
 #include "players/ai_player.hpp"
@@ -22,7 +23,8 @@ namespace scenes {
 // Runs one live match scene and returns an exit code.
 inline int runLiveMatchSession(Player* p1, Player* p2,
                                const std::string& player1Name,
-                               const std::string& player2Name) {
+                               const std::string& player2Name,
+                               BlizzardEffect* effect = nullptr) {
   NcursesGuard curses;
 
   MatchSession session(9, 11, p1, p2, player1Name, player2Name);
@@ -92,17 +94,22 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
           uiBottom, uiWidth,
           {"[Tab] Back", "[:h] Help", "[Arrows] Edit", "[Enter] Send"});
     }
+
+    if (effect) effect->updateAndDraw();
+
     refresh();
     napms(kFrameMs);
   }
 
+  // if (effect) effect->startBlockingTransition();
   return 0;
 }
 
 // Runs a local human-vs-human match from settings.
-inline int runHumanVsHuman(const Settings& settings) {
+inline int runHumanVsHuman(const Settings& settings,
+                           BlizzardEffect* effect = nullptr) {
   return runLiveMatchSession(new HumanPlayer(), new HumanPlayer(),
-                             settings.gameTag, "Player 2");
+                             settings.gameTag, "Player 2", effect);
 }
 
 // Returns the display label for an AI difficulty.
@@ -119,10 +126,11 @@ inline std::string difficultyLabel(AiDifficulty difficulty) {
 }
 
 // Runs a local human-vs-CPU match from settings.
-inline int runHumanVsCpu(const Settings& settings, AiDifficulty difficulty) {
-  return runLiveMatchSession(new HumanPlayer(),
-                             new AiPlayer(difficulty, Side::Player2),
-                             settings.gameTag, difficultyLabel(difficulty));
+inline int runHumanVsCpu(const Settings& settings, AiDifficulty difficulty,
+                         BlizzardEffect* effect = nullptr) {
+  return runLiveMatchSession(
+      new HumanPlayer(), new AiPlayer(difficulty, Side::Player2),
+      settings.gameTag, difficultyLabel(difficulty), effect);
 }
 
 }  // namespace scenes
