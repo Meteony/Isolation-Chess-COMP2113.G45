@@ -324,7 +324,8 @@ void GameHud::drawCommand(bool winFocused) {
 
   if (!winFocused && m_command.empty()) {
     drawText(innerRow, innerLeft,
-             padOrTrimRight("Esc to use commands", innerWidth));
+             padOrTrimRight("Tab to use commands", innerWidth));
+    return;
   }
 
   std::string visible = m_command;
