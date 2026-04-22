@@ -57,10 +57,10 @@ class ReplaySession {
   // Output: none (resets internal replay state/index data).
   void reset();
 
-  // Purpose: Check whether the current turn index can advance replay forward.
+  // Purpose: Check whether the current turn is valid.
   // Input: none.
-  // Output: true if the replay is not finished and the index is within history;
-  // otherwise false.
+  // Output: true if the replay is not finished and the current turn index is
+  // within history; otherwise false.
   bool currentTurnValid() const;
 
   // Purpose: Check whether one backward replay action is currently available.
