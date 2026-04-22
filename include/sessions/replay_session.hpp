@@ -82,7 +82,8 @@ class ReplaySession {
 
   // Purpose: Rebuild replay state from initial state to a target turn/phase.
   // Input: targetTurnIndex (0-based turn index), targetPhase (phase in target
-  // turn). Output: none (mutates internal replay state to requested target).
+  // turn).
+  // Output: none (mutates internal replay state to requested target).
   void replayToState(size_t targetTurnIndex, TurnPhase targetPhase);
 
   // Purpose: Apply the move action for the current turn record.
