@@ -108,7 +108,8 @@ class ReplaySession {
  public:
   // Purpose: Construct a replay session from serialized replay data.
   // Input: data (replay metadata, initial state, and turn history).
-  // Output: initialized ReplaySession object.
+  // Output: none (initializes this ReplaySession instance from the provided
+  // data).
   explicit ReplaySession(const ReplayData& data);
 
   // Purpose: Jump replay to the start of a requested turn.
