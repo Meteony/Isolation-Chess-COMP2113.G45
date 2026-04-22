@@ -98,11 +98,14 @@ class ReplaySession {
 
   // Purpose: Switch autoplay mode between enabled and disabled.
   // Input: none.
-  // Output: none (toggles internal autoplay active flag).
+  // Output: none (toggles internal autoplay active flag and resets the autoplay
+  // counter).
   void toggleAutoPlay();
 
   // Purpose: Compute autoplay delay for current turn using think time and
-  // speed. Input: none. Output: delay in ticks used by autoplay timing.
+  // speed.
+  // Input: none.
+  // Output: delay in ticks used by autoplay timing.
   long calculateAutoPlayDelay() const;
 
  public:
