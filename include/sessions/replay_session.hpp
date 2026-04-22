@@ -45,73 +45,143 @@ class ReplaySession {
       1.0f;  // 1.0 = normal speed, <1.0 = slower, >1.0 = faster
 
  private:
-  // helper methods
-  // Refreshes replay-only UI state.
+  // Helper methods.
+
+  // Purpose: Refresh replay-only UI fields from the current replay state.
+  // Input: none.
+  // Output: none (updates internal visual state cache).
   void updateVisualState();
-  // Resets the replay to the initial state.
-  void reset();  // reset replay to beginning
-  // Returns true if the current turn index is valid.
+
+  // Purpose: Reset replay to the initial state and start position.
+  // Input: none.
+  // Output: none (resets internal replay state/index data).
+  void reset();
+
+  // Purpose: Check whether the current turn index can advance replay forward.
+  // Input: none.
+  // Output: true if the replay is not finished and the index is within history;
+  // otherwise false.
   bool currentTurnValid() const;
-  // Returns true if a backward step is available.
+
+  // Purpose: Check whether one backward replay action is currently available.
+  // Input: none.
+  // Output: true if history is not empty and the current turn is not the first
+  // turn; otherwise false.
   bool hasPreviousAction() const;
-  // Steps one replay action forward. Returns true on success.
-  bool stepForward();  // applies next action, false if none available
-  // Steps one replay action backward. Returns true on success.
-  bool stepBackward();  // undo last action, false if none available
-  // Rebuilds replay state up to the target point.
-  void replayToState(
-      size_t targetTurnIndex,
-      TurnPhase targetPhase);  // replay from initial state to given state
-  // Applies the current turn's move action.
+
+  // Purpose: Advance replay by one action from the current position.
+  // Input: none.
+  // Output: true if a next action existed and was applied; otherwise false.
+  bool stepForward();
+
+  // Purpose: Move replay back by one action from the current position.
+  // Input: none.
+  // Output: true if a previous action existed and was returned to; otherwise
+  // false.
+  bool stepBackward();
+
+  // Purpose: Rebuild replay state from initial state to a target turn/phase.
+  // Input: targetTurnIndex (0-based turn index), targetPhase (phase in target
+  // turn). Output: none (mutates internal replay state to requested target).
+  void replayToState(size_t targetTurnIndex, TurnPhase targetPhase);
+
+  // Purpose: Apply the move action for the current turn record.
+  // Input: none.
+  // Output: none (updates replay state according to current move action).
   void applyCurrentMove();
-  // Applies the current turn's break action.
+
+  // Purpose: Apply the break action for the current turn record.
+  // Input: none.
+  // Output: none (updates replay state according to current break action).
   void applyCurrentBreak();
 
-  // Toggles replay autoplay on or off.
+  // Purpose: Switch autoplay mode between enabled and disabled.
+  // Input: none.
+  // Output: none (toggles internal autoplay active flag).
   void toggleAutoPlay();
-  // Returns the autoplay delay for the current turn.
-  long calculateAutoPlayDelay() const;  // calculate delay based on current
-                                        // turn's think times and playback speed
+
+  // Purpose: Compute autoplay delay for current turn using think time and
+  // speed. Input: none. Output: delay in ticks used by autoplay timing.
+  long calculateAutoPlayDelay() const;
 
  public:
-  // Creates a replay session from saved replay data.
+  // Purpose: Construct a replay session from serialized replay data.
+  // Input: data (replay metadata, initial state, and turn history).
+  // Output: initialized ReplaySession object.
   explicit ReplaySession(const ReplayData& data);
 
-  // Jumps to the start of a 1-based turn number.
+  // Purpose: Jump replay to the start of a requested turn.
+  // Input: turnNumber (1-based turn number).
+  // Output: true if jump succeeds; otherwise false.
   bool goToTurn(size_t turnNumber);
 
-  // Returns the display name for side.
+  // Purpose: Get display name of the specified player side.
+  // Input: side (Side::Player1 or Side::Player2).
+  // Output: const reference to selected player's display name.
   const std::string& playerName(Side side) const;
 
+  // Purpose: Append a UI message to the replay message log.
+  // Input: msg (message text to append).
+  // Output: none (log is updated; oldest item is dropped if size exceeds 256).
   void postUiMessage(const std::string& msg) {
     if (m_uiMessages.size() >= 256) {
       m_uiMessages.erase(m_uiMessages.begin());
     }
     m_uiMessages.push_back(msg);
   }
+
+  // Purpose: Access all queued UI messages for rendering.
+  // Input: none.
+  // Output: const reference to internal UI message list.
   const std::vector<std::string>& uiMessages() const { return m_uiMessages; }
 
-  // updated new methods (similar to MatchSession)
-  // Advances the replay by one frame of input.
+  // Purpose: Advance replay logic by one frame using current input.
+  // Input: inputChar (user input code for replay controls).
+  // Output: none (updates replay state, autoplay timers, and UI state).
   void update(int inputChar);
-  // Returns the current replay state snapshot.
+
+  // Purpose: Get current replay game-state snapshot.
+  // Input: none.
+  // Output: const reference to current GameState.
   const GameState& state() const;
-  // Returns the current replay phase.
+
+  // Purpose: Get current replay phase within the turn flow.
+  // Input: none.
+  // Output: current TurnPhase value.
   TurnPhase phase() const;
-  // Returns the stored replay turn history.
+
+  // Purpose: Access full replay turn history.
+  // Input: none.
+  // Output: const reference to vector of TurnRecord entries.
   const std::vector<TurnRecord>& history() const;
-  // Returns replay-only UI state for rendering.
+
+  // Purpose: Get replay-specific visual state for UI rendering.
+  // Input: none.
+  // Output: const reference to ReplayVisualState.
   const ReplayVisualState& visualState() const;
-  // Returns true if replay state is terminal.
+
+  // Purpose: Check whether replay has reached a terminal game state.
+  // Input: none.
+  // Output: true if game is finished; otherwise false.
   bool isFinished() const;
 
-  // auto-play methods
-  // Enables or disables autoplay.
+  // Purpose: Enable or disable replay autoplay mode.
+  // Input: active (true to enable, false to disable).
+  // Output: none (updates autoplay state and resets the autoplay counter).
   void setAutoPlay(bool active);
-  // Sets the fixed autoplay delay in ticks.
+
+  // Purpose: Set the current autoplay target delay used by timer logic.
+  // Input: ticks (delay length in ticks).
+  // Output: none (updates the runtime autoplay target delay value).
   void setAutoPlayDelay(int ticks);
-  // Returns true if autoplay is active.
+
+  // Purpose: Query whether autoplay is currently enabled.
+  // Input: none.
+  // Output: true if autoplay is active; otherwise false.
   bool isAutoPlayActive() const;
-  // Sets the replay playback speed multiplier.
+
+  // Purpose: Set replay playback speed multiplier for timing.
+  // Input: speed (multiplier where 1.0 is normal speed).
+  // Output: none (updates internal playback speed).
   void setPlaybackSpeed(float speed);
 };
