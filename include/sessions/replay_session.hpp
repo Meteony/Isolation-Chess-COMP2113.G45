@@ -183,6 +183,7 @@ class ReplaySession {
 
   // Purpose: Set replay playback speed multiplier for timing.
   // Input: speed (multiplier where 1.0 is normal speed).
-  // Output: none (updates internal playback speed).
+  // Output: none (updates internal playback speed and immediately
+  // recalculates the autoplay target delay used by timer logic).
   void setPlaybackSpeed(float speed);
 };
