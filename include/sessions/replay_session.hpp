@@ -65,8 +65,8 @@ class ReplaySession {
 
   // Purpose: Check whether one backward replay action is currently available.
   // Input: none.
-  // Output: true if history is not empty and the current turn is not the first
-  // turn; otherwise false.
+  // Output: true if at least one reverse step is possible from the current
+  // turn/phase (including finished-state rewind); otherwise false.
   bool hasPreviousAction() const;
 
   // Purpose: Advance replay by one action from the current position.
@@ -172,7 +172,8 @@ class ReplaySession {
 
   // Purpose: Set the current autoplay target delay used by timer logic.
   // Input: ticks (delay length in ticks).
-  // Output: none (updates the runtime autoplay target delay value).
+  // Output: none (updates the runtime autoplay target delay value; this value
+  // may be recalculated by per-frame autoplay timing logic).
   void setAutoPlayDelay(int ticks);
 
   // Purpose: Query whether autoplay is currently enabled.
