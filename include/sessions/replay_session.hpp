@@ -175,10 +175,11 @@ class ReplaySession {
   // Output: none (updates autoplay state and resets the autoplay counter).
   void setAutoPlay(bool active);
 
-  // Purpose: Set the current autoplay target delay used by timer logic.
-  // Input: ticks (delay length in ticks).
-  // Output: none (updates the runtime autoplay target delay value; this value
-  // may be recalculated by per-frame autoplay timing logic).
+  // Not used by current replay update flow. Kept for optional manual timing
+  // control. Purpose: Set the current autoplay target delay used by timer
+  // logic. Input: ticks (delay length in ticks). Output: none (updates the
+  // runtime autoplay target delay value; this value may be recalculated by
+  // per-frame autoplay timing logic).
   void setAutoPlayDelay(int ticks);
 
   // Purpose: Query whether autoplay is currently enabled.
