@@ -1,6 +1,8 @@
 #include "sessions/match_session.hpp"
 
-#include <sstream>
+#include <array>
+#include <random>
+#include <string>
 
 #include "core/game_rules.hpp"
 #include "core/time.hpp"
@@ -62,89 +64,122 @@ static bool isAiPlayer(const Player& player) {
   return dynamic_cast<const AiPlayer*>(&player) != nullptr;
 }
 
-static std::string colorizeAiSpeech(const std::string& text) {
-  std::istringstream iss(text);
-  std::ostringstream oss;
-  std::string word;
-  bool first = true;
-
-  while (iss >> word) {
-    if (!first) {
-      oss << ' ';
-    }
-    oss << "<MAGENTA>" << word;
-    first = false;
-  }
-
-  return first ? std::string{"<MAGENTA>AI:"} : oss.str();
+template <size_t N>
+static std::string pickAiLine(int index,
+                              const std::array<const char*, N>& lines) {
+  return std::string(lines[static_cast<size_t>(index) % lines.size()]);
 }
 
-static std::string aiReactionForPosition(const GameState& state, Side aiSide,
-                                         int gameTick) {
+static bool aiChatRoll(int oneIn) {
+  static std::mt19937 rng(std::random_device{}());
+  std::uniform_int_distribution<int> dist(1, oneIn);
+  return dist(rng) == 1;
+}
+
+static std::string aiTurnStartLine(const GameState& state, Side aiSide,
+                                   int gameTick) {
   const Side opponent = otherSide(aiSide);
   const int oppMoves = legalMoveCount(state, opponent);
   const int selfMoves = legalMoveCount(state, aiSide);
 
   if (oppMoves == 0) {
-    return "AI: ez";
+    return "Just one more square.";
   }
-
   if (oppMoves <= 1 && selfMoves >= 2) {
-    return "AI: one move left";
+    return "You're almost out of air.";
   }
-
   if (selfMoves <= 1 && oppMoves >= 3) {
-    return "AI: wait...";
+    return "Okay, this got awkward.";
   }
 
-  switch ((gameTick / 9) % 22) {
-    case 0:
-      return "AI: your turn";
-    case 1:
-      return "AI: still easy";
-    case 2:
-      return "AI: Who carried you to this level?";
-    case 3:
-      return "AI: My grandma plays better than you in wheelchair ngl";
-    case 4:
-      return "AI: nice try";
-    case 5:
-      return "AI: mid tbh";
-    case 6:
-      return "AI: pressure on";
-    case 7:
-      return "AI: Nice try, I guess...";
-    case 8:
-      return "AI: good defense";
-    case 9:
-      return "AI: that's interesting";
-    case 10:
-      return "AI: readable pattern";
-    case 11:
-      return "AI: I could win this with my eyes closed";
-    case 12:
-      return "AI: edge secured";
-    case 13:
-      return "AI: keep it coming";
-    case 14:
-      return "AI: calculation check";
-    case 15:
-      return "AI: that was a free square";
-    case 16:
-      return "AI: bold move, wrong board";
-    case 17:
-      return "AI: you walked into that";
-    case 18:
-      return "AI: too slow on the switch";
-    case 19:
-      return "AI: that's a rough line";
-    case 20:
-      return "AI: I saw that coming";
-    case 21:
-      return "AI: Kinda retarded tbh";
-    default:
-      return "AI: absolute clown move";
+  static const std::array<const char*, 8> kLines = {
+      "Let's see how you wriggle out of this.",
+      "Try not to donate a free edge.",
+      "I have seen sturdier plans in wet cardboard.",
+      "Deep breath. Bad position.",
+      "You can still pretend this is theory.",
+      "Time to make the board unpleasant.",
+      "Keep going, I'm collecting free squares.",
+      "This line already smells winning.",
+  };
+  return pickAiLine((gameTick / 7) + static_cast<int>(aiSide), kLines);
+}
+
+static std::string aiMoveLine(const GameState& state, Side aiSide,
+                              int gameTick) {
+  const Side opponent = otherSide(aiSide);
+  const int oppMoves = legalMoveCount(state, opponent);
+  const int selfMoves = legalMoveCount(state, aiSide);
+
+  if (oppMoves <= 1) {
+    return "That should narrow your options nicely.";
   }
+  if (selfMoves <= 1) {
+    return "I'm calling human resources";
+  }
+
+  static const std::array<const char*, 8> kLines = {
+      "Misclick.",
+      "Nice board. Mine now.",
+      "You really left that open.",
+      "That move seemed like too much work for you.",
+      "I like this geometry better.",
+      "Small step, large headache.",
+      "Disaster averted.",
+      "Guess what? C",
+  };
+  return pickAiLine((gameTick / 5) + static_cast<int>(aiSide), kLines);
+}
+
+static std::string aiBreakLine(const GameState& state, Side aiSide,
+                               int gameTick) {
+  const Side opponent = otherSide(aiSide);
+  const int oppMoves = legalMoveCount(state, opponent);
+  const int selfMoves = legalMoveCount(state, aiSide);
+
+  if (oppMoves == 0) {
+    return "Ez.";
+  }
+  if (oppMoves <= 1 && selfMoves >= 2) {
+    return "What is he cooking?";
+  }
+  if (selfMoves <= 1 && oppMoves >= 3) {
+    return "WAIWAIWAIWAIAWI CHILL UOT";
+  }
+
+  static const std::array<const char*, 11> kLines = {
+      "Who carried you to this level? ",
+      "My grandma plays better than you tbh and I like her. ",
+      "readable pattern",
+      "I could win this with my eyes closed",
+      "I have seen sturdier plans in spaghetti.",
+      "you walked into that",
+      "too slow on the switch",
+      "bold move, wrong board",
+      "Beep. Vitality check.",
+      "absolute clown move",
+      "Kinda regarded tbh."};
+  return pickAiLine((gameTick / 9) + static_cast<int>(aiSide), kLines);
+}
+
+static std::string aiWinnerLine(int gameTick) {
+  static const std::array<const char*, 6> kLines = {
+      "gg",      "nice try",    "Who carried you to this level?",
+      "mid tbh", "Checks out.", "\"Does he know?\"",
+  };
+  return pickAiLine(gameTick / 11, kLines);
+}
+
+static std::string aiLoserLine(int gameTick) {
+  static const std::array<const char*, 6> kLines = {
+      "I'm calling human resources.",
+      "I hope you stub your toes.",
+      "ggwp.",
+      "I had that coming.",
+      "I'm in ur walls.",
+      "rigged??????????",
+  };
+  return pickAiLine(gameTick / 11, kLines);
 }
 
 void MatchSession::update(int inputChar) {
@@ -165,24 +200,25 @@ void MatchSession::update(int inputChar) {
     return std::to_string(whole) + "." + frac + "s";
   };
 
-  auto coloredPlayerName = [&](Side side) { /*For auto UI turn messages too*/
-                                            return ((side == Side::Player1)
-                                                        ? std::string("<P1>")
-                                                        : std::string("<P2>")) +
-                                                   playerName(side);
+  auto coloredPlayerName = [&](Side side) {
+    return ((side == Side::Player1) ? std::string("<P1>")
+                                    : std::string("<P2>")) +
+           playerName(side);
   };
 
-  // Update UI element
-  if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
-    m_visualState.cursorVisible = true;
-    m_visualState.cursor = human->cursor();
-  } else {
-    m_visualState.cursorVisible = false;
-  }
+  // If the bot is going to be smug, it can at least use the same chat lane
+  // as everybody else instead of graffitiing raw color tags into the log.
+  // Also, keep the yap budget low. This clown is not paid by the line.
+  auto postSpokenLine = [&](Side speaker, const std::string& text) {
+    if (text.empty()) {
+      return;
+    }
+    postUiMessage(coloredPlayerName(speaker) + ": " + text);
+  };
 
   if (m_state.status() == SessionStatus::Finished) {
     m_visualState.cursorVisible = false;
-    return;
+    goto UpdateAndReturn;
   }
 
   switch (m_state.phase()) {
@@ -195,11 +231,17 @@ void MatchSession::update(int inputChar) {
       m_state.setPhase(TurnPhase::Move);
       player.beginMovePhase(m_state);
 
-      int currentTurnNumber = /*Wait we don't do turn tracking?*/
-          static_cast<int>(m_history.size()) + 1;
+      int currentTurnNumber = static_cast<int>(m_history.size()) + 1;
       std::string msg =
           "<YELLOW>[i] Turn <YELLOW>" + std::to_string(currentTurnNumber);
       postUiMessage(msg);
+
+      if (isAiPlayer(player)) {
+        const Side aiSide = m_state.sideToMove();
+        if (aiChatRoll(4)) {
+          postSpokenLine(aiSide, aiTurnStartLine(m_state, aiSide, m_gameTick));
+        }
+      }
 
       goto UpdateAndReturn;
     }
@@ -208,13 +250,13 @@ void MatchSession::update(int inputChar) {
       player.update(inputChar, m_state);
 
       if (!player.hasMoveReady()) {
-        return;
+        goto UpdateAndReturn;
       }
 
       Coord move = player.consumeMove();
 
       if (!GameRules::isLegalMove(m_state, m_state.sideToMove(), move)) {
-        return;
+        goto UpdateAndReturn;
       }
 
       GameRules::applyMove(m_state, m_state.sideToMove(), move);
@@ -224,9 +266,8 @@ void MatchSession::update(int inputChar) {
 
       if (isAiPlayer(player)) {
         const Side aiSide = m_state.sideToMove();
-        const int selfMoves = legalMoveCount(m_state, aiSide);
-        if (selfMoves <= 2) {
-          postUiMessage(colorizeAiSpeech("AI: locked in"));
+        if (aiChatRoll(14)) {
+          postSpokenLine(aiSide, aiMoveLine(m_state, aiSide, m_gameTick));
         }
       }
 
@@ -235,20 +276,20 @@ void MatchSession::update(int inputChar) {
 
       player.beginBreakPhase(m_state);
       m_state.setPhase(TurnPhase::Break);
-      return;
+      goto UpdateAndReturn;
     }
 
     case TurnPhase::Break: {
       player.update(inputChar, m_state);
 
       if (!player.hasBreakReady()) {
-        return;
+        goto UpdateAndReturn;
       }
 
       Coord breakTile = player.consumeBreak();
 
       if (!GameRules::isLegalBreak(m_state, breakTile)) {
-        return;
+        goto UpdateAndReturn;
       }
 
       GameRules::applyBreak(m_state, breakTile);
@@ -256,34 +297,39 @@ void MatchSession::update(int inputChar) {
       m_currentTurnRecord.breakCoord = breakTile;
       m_currentTurnRecord.thinkTicksBeforeBreak += m_gameTick;
 
-      if (isAiPlayer(player)) {
-        postUiMessage(colorizeAiSpeech(
-            aiReactionForPosition(m_state, m_state.sideToMove(), m_gameTick)));
-      }
-
-      /*Post messages*/
       const Side actor = m_state.sideToMove();
       const long moveTicks = m_currentTurnRecord.thinkTicksBeforeMove;
       const long breakTicks = m_currentTurnRecord.thinkTicksBeforeBreak;
       const long totalTicks = moveTicks + breakTicks;
       postUiMessage(coloredPlayerName(actor) + ": Finished in " +
                     formatTicks(totalTicks));
+
+      if (isAiPlayer(player) && aiChatRoll(3)) {
+        postSpokenLine(actor, aiBreakLine(m_state, actor, m_gameTick));
+      }
+
       pushHistory(m_currentTurnRecord);
 
       Side nextSide = otherSide(m_state.sideToMove());
 
-      if (!GameRules::hasAnyLegalMove(m_state, nextSide)) {
-        m_state.setWinner(m_state.sideToMove());
+      const Side winner = !GameRules::hasAnyLegalMove(m_state, nextSide)
+                              ? m_state.sideToMove()
+                              : nextSide;
+
+      if (!GameRules::hasAnyLegalMove(m_state, nextSide) ||
+          !GameRules::hasAnyLegalMove(m_state, m_state.sideToMove())) {
+        m_state.setWinner(winner);
         m_state.setStatus(SessionStatus::Finished);
 
-        if (isAiPlayer(player)) {
-          postUiMessage(colorizeAiSpeech("AI: ez"));
+        if (isAiPlayer(player) && winner == actor) {
+          postSpokenLine(actor, aiWinnerLine(m_gameTick));
         } else {
-          Player& loser = (nextSide == Side::Player1) ? *m_p1 : *m_p2;
+          Player& loser = (winner == Side::Player1) ? *m_p2 : *m_p1;
           if (isAiPlayer(loser)) {
-            postUiMessage(colorizeAiSpeech("AI: gg"));
+            postSpokenLine(otherSide(winner), aiLoserLine(m_gameTick));
           }
         }
+
         postUiMessage(std::string("<YELLOW>Result: ") +
                       coloredPlayerName(winner) + std::string(" wins."));
         goto UpdateAndReturn;
@@ -291,9 +337,19 @@ void MatchSession::update(int inputChar) {
 
       m_state.setSideToMove(nextSide);
       m_state.setPhase(TurnPhase::NewTurn);
-      return;
+      goto UpdateAndReturn;
     }
   }
+
+UpdateAndReturn:
+  // Keep main's shared exit funnel intact. Yes, the goto stays.
+  if (auto* human = dynamic_cast<HumanPlayer*>(&player)) {
+    m_visualState.cursorVisible = true;
+    m_visualState.cursor = human->cursor();
+  } else {
+    m_visualState.cursorVisible = false;
+  }
+  return;
 }
 
 // Return current player ptr

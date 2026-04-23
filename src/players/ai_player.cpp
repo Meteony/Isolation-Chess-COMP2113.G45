@@ -89,7 +89,7 @@ StrategyWeights adjustedWeights(const GameState& state, AiDifficulty difficulty,
 
   int totalTiles = state.rows() * state.cols();
   int intactTiles = countIntactTiles(state);
-  bool isEndgame = (intactTiles * 100) < (totalTiles * 40);
+  bool isEndgame = (intactTiles * 100) < (totalTiles * 95);
   if ((difficulty == AiDifficulty::Medium ||
        difficulty == AiDifficulty::Hard) &&
       isEndgame) {
@@ -133,7 +133,7 @@ int minimaxDepth(const GameState& state, AiDifficulty difficulty) {
 
   int totalTiles = state.rows() * state.cols();
   int intactTiles = countIntactTiles(state);
-  bool isEndgame = (intactTiles * 100) < (totalTiles * 40);
+  bool isEndgame = (intactTiles * 100) < (totalTiles * 65);
   return isEndgame ? 4 : 3;
 }
 
