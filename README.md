@@ -43,57 +43,6 @@ Original concept reference: <https://scratch.mit.edu/projects/241565591/>
   - board scrolling when the viewport is smaller than the full board
 - **Colorized HUD log messages** for player actions, help output, replay saves, and network status
 
-## Compliance with code requirements
-
-1. **Generation of random events**
-The project uses true runtime randomness in gameplay logic, not just fixed scripted branching.
-
-  1. AI strategy selection is probabilistic. The AI computes weighted strategy probabilities and samples one at runtime in `src/players/ai_player.cpp`.
-  2. Easy/Medium/Hard use different base weights (random, greedy, minimax), defined in `src/players/ai_player.cpp`.
-  3. Random legal move and break selection is implemented in `src/players/ai_player.cpp` (`findRandomMove`, `findRandomBreak`).
-  4. RNG is seeded using `std::random_device` in the AI constructor in `src/players/ai_player.cpp`.
-  5. The launcher also includes randomized replay preview loading behavior in `src/main.cpp` (`loadRandom`).
-
-2. **Data structures for storing data**
-The system uses structured containers across game state, session state, and persistence layers.
-
-  1. Board tiles are stored as a vector in `include/core/game_state.hpp` (`std::vector<TileState> m_tiles`).
-  2. Live session UI messages and turn history are stored in vectors in `include/sessions/match_session.hpp`.
-  3. Replay payload uses vectors for history and message storage in `include/core/replay_data.hpp`.
-  4. AI search utilities build legal-action vectors in `src/players/ai_player.cpp`.
-
-3. **Dynamic memory management**
-Dynamic allocation is used to support polymorphism for different player types at runtime.
-
-  1. Player instances are created dynamically when scenes start matches in `include/scenes/live_match_scene.hpp`.
-  2. Ownership cleanup is explicitly handled in the `MatchSession` destructor in `src/sessions/match_session.cpp`.
-  3. Other parts of the codebase also use RAII-style smart pointers (for example `std::unique_ptr` in app/session flow), indicating mixed manual and modern memory management where appropriate.
-
-4. **File input/output (loading/saving)**
-Persistent I/O is implemented for both replay data and user settings.
-
-  1. Replay files are written using `std::ofstream` in `src/core/replay_io.cpp` (`saveReplay`).
-  2. Replay files are read using `std::ifstream` in `src/core/replay_io.cpp` (`loadReplay`).
-  3. Settings are loaded from `settings.cfg` in `src/misc/settings_io.cpp` (`loadSettings`).
-  4. Settings are saved back in `src/misc/settings_io.cpp` (`saveSettings`).
-  5. The launcher uses these settings load/save paths during startup and settings edits in `src/main.cpp`.
-
-5. **Program code in multiple files**
-The project is clearly modularized and compiled from many translation units.
-
-  1. Core logic, UI, sessions, players, and misc utilities are split across `include/` and `src/`.
-  2. The `launcher` build target compiles many separate source files in `Makefile`, confirming multi-file architecture and linkage.
-  3. This separation supports maintainability: AI logic is isolated in `src/players/ai_player.cpp`, persistence in `src/core/replay_io.cpp`, settings in `src/misc/settings_io.cpp`, and orchestration in `src/main.cpp`.
-
-6. **Multiple difficulty levels**
-Difficulty is a first-class feature, represented in type definitions, runtime selection, and AI behavior.
-
-  1. Difficulty enum values `Easy`, `Medium`, `Hard` are defined in `include/core/enums.hpp`.
-  2. Launcher menu routes each choice to the corresponding difficulty in `src/main.cpp`.
-  3. AI behavior changes by difficulty via weight profiles in `src/players/ai_player.cpp`.
-  4. Medium dynamically shifts toward minimax as turns progress in `src/players/ai_player.cpp`.
-  5. Hard uses stronger minimax emphasis and deeper endgame search in `src/players/ai_player.cpp`.
-
 ## What the current launcher does
 
 The main entry point is `src/main.cpp`. The launcher currently supports:
@@ -304,6 +253,57 @@ This is the current layout that matters for the active launcher path.
 - `src/sessions/replay_session.cpp` — replay stepping, autoplay, and visual state
 - `src/core/replay_io.cpp` — replay file save/load
 - `include/players/network_player.hpp` — header-only network link and network player wrappers
+
+## Compliance with code requirements
+
+1. **Generation of random events**
+The project uses true runtime randomness in gameplay logic, not just fixed scripted branching. For example:
+
+  1. AI strategy selection is probabilistic. The AI computes weighted strategy probabilities and samples one at runtime in `src/players/ai_player.cpp`.
+  2. Easy/Medium/Hard use different base weights (random, greedy, minimax), defined in `src/players/ai_player.cpp`.
+  3. Random legal move and break selection is implemented in `src/players/ai_player.cpp` (`findRandomMove`, `findRandomBreak`).
+  4. RNG is seeded using `std::random_device` in the AI constructor in `src/players/ai_player.cpp`.
+  5. The launcher also includes randomized replay preview loading behavior in `src/main.cpp` (`loadRandom`).
+
+2. **Data structures for storing data**
+The system uses structured containers across game state, session state, and persistence layers. For example:
+
+  1. Board tiles are stored as a vector in `include/core/game_state.hpp` (`std::vector<TileState> m_tiles`).
+  2. Live session UI messages and turn history are stored in vectors in `include/sessions/match_session.hpp`.
+  3. Replay payload uses vectors for history and message storage in `include/core/replay_data.hpp`.
+  4. AI search utilities build legal-action vectors in `src/players/ai_player.cpp`.
+
+3. **Dynamic memory management**
+Dynamic allocation is used to support polymorphism for different player types at runtime. For example:
+
+  1. Player instances are created dynamically when scenes start matches in `include/scenes/live_match_scene.hpp`.
+  2. Ownership cleanup is explicitly handled in the `MatchSession` destructor in `src/sessions/match_session.cpp`.
+  3. `include/misc/blizzard_transition.hpp` uses manual allocation for its `BlizzardEffect` pens, creating them with `new` and releasing them in the effect destructor and update loop.
+
+4. **File input/output (loading/saving)**
+Persistent I/O is implemented for both replay data and user settings. For example:
+
+  1. Replay files are written using `std::ofstream` in `src/core/replay_io.cpp` (`saveReplay`).
+  2. Replay files are read using `std::ifstream` in `src/core/replay_io.cpp` (`loadReplay`).
+  3. Settings are loaded from `settings.cfg` by default in `src/misc/settings_io.cpp` (`loadSettings`).
+  4. Settings are saved back to `settings.cfg` by default in `src/misc/settings_io.cpp` (`saveSettings`).
+  5. The launcher uses these settings load/save paths during startup and settings edits in `src/main.cpp`.
+
+5. **Program code in multiple files**
+The project is clearly modularized and compiled from many translation units. For example:
+
+  1. Core logic, UI, sessions, players, and misc utilities are split across `include/` and `src/`.
+  2. The `launcher` build target compiles many separate source files in `Makefile`.
+  3. This separation supports maintainability: AI logic is isolated in `src/players/ai_player.cpp`, persistence in `src/core/replay_io.cpp`, settings in `src/misc/settings_io.cpp`, and orchestration in `src/main.cpp`.
+
+6. **Multiple difficulty levels**
+Difficulty levels are implemented through type definitions, runtime selection, and AI behavior. For example:
+
+  1. Difficulty enum values `Easy`, `Medium`, `Hard` are defined in `include/core/enums.hpp`.
+  2. Launcher menu routes each choice to the corresponding difficulty in `src/main.cpp`.
+  3. AI behavior changes by difficulty via weight profiles in `src/players/ai_player.cpp`.
+  4. Medium dynamically shifts toward minimax as turns progress in `src/players/ai_player.cpp`.
+  5. Hard uses stronger minimax emphasis and deeper endgame search in `src/players/ai_player.cpp`.
 
 ## Non-standard libraries and dependencies
 
