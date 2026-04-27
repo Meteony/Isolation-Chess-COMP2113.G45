@@ -257,12 +257,12 @@ This is the current layout that matters for the active launcher path.
 ## Compliance with code requirements
 
 1. **Generation of random events**
-  The project uses true runtime randomness in gameplay logic, not just fixed scripted branching. For example:
+  The project uses runtime-seeded pseudo-randomness in gameplay logic, not just fixed scripted branching. For example:
 
     - AI strategy selection is probabilistic. The AI computes weighted strategy probabilities and samples one at runtime in `src/players/ai_player.cpp`.
     - Easy/Medium/Hard use different base weights (random, greedy, minimax), defined in `src/players/ai_player.cpp`.
     - Random legal move and break selection is implemented in `src/players/ai_player.cpp` (`findRandomMove`, `findRandomBreak`).
-    - RNG is seeded using `std::random_device` in the AI constructor in `src/players/ai_player.cpp`.
+    - The AI's PRNG is seeded at runtime using `std::random_device` in the AI constructor in `src/players/ai_player.cpp`.
     - The launcher also includes randomized replay preview loading behavior in `src/main.cpp` (`loadRandom`).
 
 2. **Data structures for storing data**
