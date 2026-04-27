@@ -43,6 +43,27 @@ Original concept reference: <https://scratch.mit.edu/projects/241565591/>
   - board scrolling when the viewport is smaller than the full board
 - **Colorized HUD log messages** for player actions, help output, replay saves, and network status
 
+## Compliance with code requirements
+
+1. **Generation of random events**
+  - Explanation: The project introduces stochastic behavior to avoid deterministic gameplay and to vary AI behavior across matches.
+  - Examples: `src/players/ai_player.cpp` uses random move selection (`findRandomMove`), random break selection (`findRandomBreak`), and probabilistic strategy selection (`chooseStrategy`); `src/main.cpp` includes random replay preview selection (`loadRandom`).
+2. **Data structures for storing data**
+  - Explanation: The system uses structured containers to represent game state, history, and UI/runtime metadata in a consistent and maintainable way.
+  - Examples: `include/core/game_state.hpp` stores board tiles in `std::vector<TileState> m_tiles`; `include/sessions/match_session.hpp` stores UI messages and turn history in vectors; `include/core/replay_data.hpp` stores replay history and UI messages for persistence.
+3. **Dynamic memory management**
+  - Explanation: Runtime polymorphism is supported by allocating player implementations dynamically and releasing them through session ownership rules.
+  - Examples: `include/scenes/live_match_scene.hpp` constructs players with `new HumanPlayer()` and `new AiPlayer(...)`; `src/sessions/match_session.cpp` releases owned players in `MatchSession::~MatchSession()`.
+4. **File input/output**
+  - Explanation: The application persists both gameplay artifacts and configuration using explicit serialization and parsing logic.
+  - Examples: `src/core/replay_io.cpp` writes and reads replay files (`saveReplay`, `loadReplay`) in `replays/`; `src/misc/settings_io.cpp` reads and writes launcher configuration in `settings.cfg`.
+5. **Program code in multiple files**
+  - Explanation: The implementation follows a modular, multi-file architecture that separates responsibilities across subsystems.
+  - Examples: domain-specific code is separated under `include/` and `src/` (core, players, sessions, scenes, UI, misc); the `Makefile` compiles and links multiple translation units into final binaries.
+6. **Multiple difficulty levels**
+  - Explanation: AI complexity is exposed through distinct difficulty tiers, enabling progressive challenge levels for single-player mode.
+  - Examples: `include/core/enums.hpp` defines `AiDifficulty` (`Easy`, `Medium`, `Hard`); `src/main.cpp` exposes difficulty-specific launcher options; `src/players/ai_player.cpp` adjusts strategy weights and behavior by difficulty.
+
 ## What the current launcher does
 
 The main entry point is `src/main.cpp`. The launcher currently supports:
