@@ -257,6 +257,7 @@ This is the current layout that matters for the active launcher path.
 ## Compliance with code requirements
 
 1. **Generation of random events**
+
   The project uses runtime-seeded pseudo-randomness in gameplay logic, not just fixed scripted branching. For example:
 
     - AI strategy selection is probabilistic. The AI computes weighted strategy probabilities and samples one at runtime in `src/players/ai_player.cpp`.
@@ -266,6 +267,7 @@ This is the current layout that matters for the active launcher path.
     - The launcher also includes randomized replay preview loading behavior in `src/main.cpp` (`loadRandom`).
 
 2. **Data structures for storing data**
+
   The system uses structured containers across game state, session state, and persistence layers. For example:
 
     - Board tiles are stored as a vector in `include/core/game_state.hpp` (`std::vector<TileState> m_tiles`).
@@ -274,6 +276,7 @@ This is the current layout that matters for the active launcher path.
     - AI search utilities build legal-action vectors in `src/players/ai_player.cpp`.
 
 3. **Dynamic memory management**
+
   Dynamic allocation is used to support polymorphism for different player types at runtime. For example:
 
     - Player instances are created with `new` dynamically when scenes start matches in `include/scenes/live_match_scene.hpp`.
@@ -281,6 +284,7 @@ This is the current layout that matters for the active launcher path.
     - `include/misc/blizzard_transition.hpp` uses manual allocation for its `BlizzardEffect` pens, creating them with `new` and releasing them in the effect destructor and update loop.
 
 4. **File input/output (loading/saving)**
+
   Persistent I/O is implemented for both replay data and user settings. For example:
 
     - Replay files are written using `std::ofstream` in `src/core/replay_io.cpp` (`saveReplay`).
@@ -290,6 +294,7 @@ This is the current layout that matters for the active launcher path.
     - The launcher uses these settings load/save paths during startup and settings edits in `src/main.cpp`.
 
 5. **Program code in multiple files**
+
   The project is clearly modularized and compiled from many translation units. For example:
 
     - Core logic, UI, sessions, players, and misc utilities are split across `include/` and `src/`.
@@ -297,6 +302,7 @@ This is the current layout that matters for the active launcher path.
     - This separation supports maintainability: AI logic is isolated in `src/players/ai_player.cpp`, settings in `src/misc/settings_io.cpp`, etc.
 
 6. **Multiple difficulty levels**
+
   Difficulty levels are implemented through type definitions, runtime selection, and AI behavior. For example:
 
     - Difficulty enum values `Easy`, `Medium`, `Hard` are defined in `include/core/enums.hpp`.
