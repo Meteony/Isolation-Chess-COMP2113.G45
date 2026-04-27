@@ -46,23 +46,53 @@ Original concept reference: <https://scratch.mit.edu/projects/241565591/>
 ## Compliance with code requirements
 
 1. **Generation of random events**
-  - Explanation: The project introduces stochastic behavior to avoid deterministic gameplay and to vary AI behavior across matches.
-  - Examples: `src/players/ai_player.cpp` uses random move selection (`findRandomMove`), random break selection (`findRandomBreak`), and probabilistic strategy selection (`chooseStrategy`); `src/main.cpp` includes random replay preview selection (`loadRandom`).
+The project uses true runtime randomness in gameplay logic, not just fixed scripted branching.
+
+  1. AI strategy selection is probabilistic. The AI computes weighted strategy probabilities and samples one at runtime in `src/players/ai_player.cpp`.
+  2. Easy/Medium/Hard use different base weights (random, greedy, minimax), defined in `src/players/ai_player.cpp`.
+  3. Random legal move and break selection is implemented in `src/players/ai_player.cpp` (`findRandomMove`, `findRandomBreak`).
+  4. RNG is seeded using `std::random_device` in the AI constructor in `src/players/ai_player.cpp`.
+  5. The launcher also includes randomized replay preview loading behavior in `src/main.cpp` (`loadRandom`).
+
 2. **Data structures for storing data**
-  - Explanation: The system uses structured containers to represent game state, history, and UI/runtime metadata in a consistent and maintainable way.
-  - Examples: `include/core/game_state.hpp` stores board tiles in `std::vector<TileState> m_tiles`; `include/sessions/match_session.hpp` stores UI messages and turn history in vectors; `include/core/replay_data.hpp` stores replay history and UI messages for persistence.
+The system uses structured containers across game state, session state, and persistence layers.
+
+  1. Board tiles are stored as a vector in `include/core/game_state.hpp` (`std::vector<TileState> m_tiles`).
+  2. Live session UI messages and turn history are stored in vectors in `include/sessions/match_session.hpp`.
+  3. Replay payload uses vectors for history and message storage in `include/core/replay_data.hpp`.
+  4. AI search utilities build legal-action vectors in `src/players/ai_player.cpp`.
+
 3. **Dynamic memory management**
-  - Explanation: Runtime polymorphism is supported by allocating player implementations dynamically and releasing them through session ownership rules.
-  - Examples: `include/scenes/live_match_scene.hpp` constructs players with `new HumanPlayer()` and `new AiPlayer(...)`; `src/sessions/match_session.cpp` releases owned players in `MatchSession::~MatchSession()`.
-4. **File input/output**
-  - Explanation: The application persists both gameplay artifacts and configuration using explicit serialization and parsing logic.
-  - Examples: `src/core/replay_io.cpp` writes and reads replay files (`saveReplay`, `loadReplay`) in `replays/`; `src/misc/settings_io.cpp` reads and writes launcher configuration in `settings.cfg`.
+Dynamic allocation is used to support polymorphism for different player types at runtime.
+
+  1. Player instances are created dynamically when scenes start matches in `include/scenes/live_match_scene.hpp`.
+  2. Ownership cleanup is explicitly handled in the `MatchSession` destructor in `src/sessions/match_session.cpp`.
+  3. Other parts of the codebase also use RAII-style smart pointers (for example `std::unique_ptr` in app/session flow), indicating mixed manual and modern memory management where appropriate.
+
+4. **File input/output (loading/saving)**
+Persistent I/O is implemented for both replay data and user settings.
+
+  1. Replay files are written using `std::ofstream` in `src/core/replay_io.cpp` (`saveReplay`).
+  2. Replay files are read using `std::ifstream` in `src/core/replay_io.cpp` (`loadReplay`).
+  3. Settings are loaded from `settings.cfg` in `src/misc/settings_io.cpp` (`loadSettings`).
+  4. Settings are saved back in `src/misc/settings_io.cpp` (`saveSettings`).
+  5. The launcher uses these settings load/save paths during startup and settings edits in `src/main.cpp`.
+
 5. **Program code in multiple files**
-  - Explanation: The implementation follows a modular, multi-file architecture that separates responsibilities across subsystems.
-  - Examples: domain-specific code is separated under `include/` and `src/` (core, players, sessions, scenes, UI, misc); the `Makefile` compiles and links multiple translation units into final binaries.
+The project is clearly modularized and compiled from many translation units.
+
+  1. Core logic, UI, sessions, players, and misc utilities are split across `include/` and `src/`.
+  2. The `launcher` build target compiles many separate source files in `Makefile`, confirming multi-file architecture and linkage.
+  3. This separation supports maintainability: AI logic is isolated in `src/players/ai_player.cpp`, persistence in `src/core/replay_io.cpp`, settings in `src/misc/settings_io.cpp`, and orchestration in `src/main.cpp`.
+
 6. **Multiple difficulty levels**
-  - Explanation: AI complexity is exposed through distinct difficulty tiers, enabling progressive challenge levels for single-player mode.
-  - Examples: `include/core/enums.hpp` defines `AiDifficulty` (`Easy`, `Medium`, `Hard`); `src/main.cpp` exposes difficulty-specific launcher options; `src/players/ai_player.cpp` adjusts strategy weights and behavior by difficulty.
+Difficulty is a first-class feature, represented in type definitions, runtime selection, and AI behavior.
+
+  1. Difficulty enum values `Easy`, `Medium`, `Hard` are defined in `include/core/enums.hpp`.
+  2. Launcher menu routes each choice to the corresponding difficulty in `src/main.cpp`.
+  3. AI behavior changes by difficulty via weight profiles in `src/players/ai_player.cpp`.
+  4. Medium dynamically shifts toward minimax as turns progress in `src/players/ai_player.cpp`.
+  5. Hard uses stronger minimax emphasis and deeper endgame search in `src/players/ai_player.cpp`.
 
 ## What the current launcher does
 
