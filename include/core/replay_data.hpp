@@ -24,6 +24,3 @@ struct ReplayMetadata {
   std::string player1Name;
   std::string player2Name;
 };
-
-static std::optional<ReplayMetadata> loadReplayMetadata(
-    const std::string& filepath);

@@ -251,6 +251,8 @@ void drawScrollbar(int top, int col, int height, int visibleTop,
   attroff(COLOR_PAIR(CP_FRAME));
 }
 
+// Unused
+/*
 std::vector<std::string> logoLines() {
   return {
       "  ________            ______                    ",
@@ -261,7 +263,7 @@ std::vector<std::string> logoLines() {
       "                                                ",
   };
 }
-
+*/
 std::vector<std::string> logoLinesA() {
   return {
       "                                                ",
