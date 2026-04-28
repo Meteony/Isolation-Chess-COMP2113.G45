@@ -11,7 +11,7 @@ This README reflects the current launcher-based version in the repository, not t
 - Gino
 - Haneef
 - Noah
-- Scott
+- Scott: Implemented GameRules module and related core tests. Implemented the replay saving/reading part. Recorded and edited the project demo video.
 
 ## Application description
 
