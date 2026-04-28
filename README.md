@@ -15,7 +15,9 @@ A terminal-based C++ implementation of Isolation Chess with local play, three AI
 
 ## Application description
 
-Isolation Chess is a terminal-based C++ strategy game built with ncurses. The project supports local multiplayer, single-player matches against AI, replay saving/loading, a replay browser, and lightweight two-player netplay through a Python relay server.
+Isolation Chess is a terminal-based C++ strategy game built with ncurses. Players take turns moving their piece and then breaking a tile; a player loses when they cannot make a legal move.
+
+The project is designed as both a playable terminal game and a modular C++ coursework project. It separates game rules, session state, player logic, UI rendering, replay persistence, and netplay transport into different source files.
 
 ## Reference
 
@@ -25,20 +27,20 @@ Original concept reference: <https://scratch.mit.edu/projects/241565591/>
 
 - **Local multiplayer**: Human vs Human
 - **Single-player**: Human vs CPU with **Easy**, **Medium**, and **Hard** AI
-  - ![Replay Demo](assets/Isolation-GIF-05.gif)
+  - ![AI Demo](assets/Isolation-GIF-05.gif)
 
 - **Replay system**:
   - save finished or in-progress games from the HUD command box
   - load replays from the built-in replay browser
-  - replay stepping, reset, and autoplay
-  - replay files also preserve player names and stored UI messages
+  - step backward/forward, reset, and autoplay replay files
+  - preserve player names, turn history, and stored UI messages
   ![Replay Demo](assets/Isolation-GIF-02.gif)
-  
+
 - **Netplay**:
   - room-based two-player connection through a lightweight Python relay server
   - player tags exchanged during handshake
   - in-game chat through the HUD command box
-  ![Replay Demo](assets/Isolation-GIF-03.gif)
+  ![Netplay Demo](assets/Isolation-GIF-03.gif)
 
 - **Settings editor** from the launcher:
   - server IP
@@ -49,7 +51,7 @@ Original concept reference: <https://scratch.mit.edu/projects/241565591/>
 - **Dynamic ncurses layout**:
   - board and HUD relayout on terminal resize
   - board scrolling when the viewport is smaller than the full board
-  ![Settings Demo](assets/Isolation-GIF-06.gif)
+  ![Layout Demo](assets/Isolation-GIF-06.gif)
 
 - **Colorized HUD log messages** for player actions, help output, replay saves, and network status
 
@@ -77,7 +79,7 @@ The main runtime path uses:
 
 ## Controls
 
-## Launcher menus
+### Launcher menus
 
 The launcher and browser menus are currently digit-driven.
 
@@ -89,7 +91,7 @@ The launcher and browser menus are currently digit-driven.
   - `9` previous page
   - `0` next page
 
-## Live match controls
+### Live match controls
 
 When the **game board is focused**:
 
@@ -117,7 +119,7 @@ Supported shared commands in local play and netplay:
 
 Replay names are restricted to letters, digits, `_`, `-`, and `.`.
 
-## Replay controls
+### Replay controls
 
 When the **replay board is focused**:
 
@@ -140,6 +142,19 @@ When the **HUD is focused**, the command box accepts:
 
 Netplay is built around a simple room relay server in `server/relay_server.py`.
 
+### Start the bundled relay server
+
+```bash
+python3 server/relay_server.py
+```
+
+The bundled server listens on:
+
+- host: `0.0.0.0`
+- port: `5050`
+
+The default settings also use `localhost` and port `5050`, so local testing works without editing the port.
+
 ### Wire protocol summary
 
 Client messages:
@@ -159,27 +174,6 @@ Server messages:
 - `CHAT <1|2> <text>`
 - `INFO <free text>`
 - `ERROR <free text>`
-
-### Start the bundled relay server
-
-```bash
-python3 server/relay_server.py
-```
-
-The bundled server listens on:
-
-- host: `0.0.0.0`
-- port: `5050`
-
-### Important settings note
-
-The default `Settings` in `include/misc/settings_io.hpp` currently use:
-
-- `serverIp = "localhost"`
-- `serverPort = 5050`
-- `gameTag = "Player"`
-
-So if you use the bundled relay server without editing anything else, the bundled relay server and default settings already match on port `5050`.
 
 ## Replay files
 
@@ -362,23 +356,11 @@ make netplay
 
 `make clean` removes the built binaries listed in the Makefile.
 
-### Netplay server
-
-Run the relay server in a separate terminal before testing online play:
-
-```bash
-python3 server/relay_server.py
-```
-
-### Replay files
-
-Saved replay files are stored in `replays/` and can be opened from the launcher replay browser.
-
 ## Settings file
 
 The launcher reads and writes `settings.cfg` using `SettingsIO`.
 
-Expected keys:
+Default values:
 
 ```ini
 server_ip=localhost
@@ -410,7 +392,7 @@ main.cpp / scene entry points
     -> ncurses screen
 ```
 
-In practice, each frame follows the same pattern:
+Each frame follows the same general pattern:
 
 1. a scene reads input from `KeyQueue`
 2. the scene forwards board input to a session
@@ -440,7 +422,7 @@ The session classes are the heart of the runtime model. They sit between input/r
 - `MatchSession` owns a live match
 - `ReplaySession` owns replay playback state
 
-`MatchSession` stores more than just the board: it also tracks player names, UI messages, turn history, the current visual cursor state, and replay export data. `ReplaySession` keeps a separate replay timeline, playback settings, autoplay timing, and replay-only HUD information.
+`MatchSession` tracks player names, UI messages, turn history, visual cursor state, and replay export data. `ReplaySession` keeps replay timeline state, playback settings, autoplay timing, and replay-only HUD information.
 
 This is why the project keeps `GameState` and `MatchSession` separate. `GameState` is intentionally compact and easy to copy for rule checks and AI search, while `MatchSession` is the broader runtime container used by the UI and replay system.
 
@@ -454,7 +436,7 @@ The `include/core/` and `src/core/` files define the rule engine and persistent 
 - `ReplayData` packages everything needed to save or reload a session
 - `ReplayIO` serializes replay files to disk
 
-A useful way to think about this layer is: it knows what the game *is*, but not how it should be drawn on screen.
+A useful way to think about this layer is: it knows what the game is, but not how it should be drawn on screen.
 
 #### 4. Player layer
 
@@ -464,7 +446,7 @@ All player types share the same `Player` interface, which lets `MatchSession` dr
 - `AiPlayer` chooses actions with random, greedy, or minimax-based logic depending on difficulty
 - `NetworkHumanPlayer` and `NetworkPlayer` adapt the same turn model to remote play through `NetworkLink`
 
-That common interface is what keeps netplay from needing a separate copy of the game rules or turn engine.
+That common interface keeps netplay from needing a separate copy of the game rules or turn engine.
 
 #### 5. UI layer
 
@@ -477,38 +459,30 @@ Both renderers are fed by sessions rather than mutating the game directly. This 
 
 `ui_resize_helper.hpp` sits beside them and computes the board/HUD size split on terminal resize.
 
-### How the main runtime fits together
+### Runtime modes
 
 #### Local game flow
 
-For a normal match, `src/main.cpp` selects a mode, constructs the appropriate players, and calls `runLiveMatchSession(...)`. The scene then owns:
-
-- the ncurses lifetime
-- focus switching between board and HUD
-- input dispatch
-- layout refresh on `KEY_RESIZE`
-- top-level commands such as `:save`, `:quit`, and `:help`
-
-The actual turn progression still lives inside `MatchSession::update(...)`.
+For a normal match, `src/main.cpp` selects a mode, constructs the appropriate players, and calls `runLiveMatchSession(...)`. The scene owns the ncurses lifetime, focus switching, input dispatch, layout refresh, and top-level commands, while the actual turn progression lives inside `MatchSession::update(...)`.
 
 #### Replay flow
 
-Replay mode loads a `ReplayData` object through `ReplayIO`, builds a `ReplaySession`, and then reuses the same board/HUD rendering approach as live play. This reuse is one of the strongest architectural choices in the project: replay mode is not a totally separate UI stack. It is mostly the same screen structure backed by a different session type.
+Replay mode loads a `ReplayData` object through `ReplayIO`, builds a `ReplaySession`, and reuses the same board/HUD rendering approach as live play. This reuse means replay mode is backed by a different session type rather than a separate UI stack.
 
 #### Netplay flow
 
-Netplay keeps the same match/session/rendering structure and swaps in a different player backend. `NetworkLink` handles the socket connection, background reader thread, parsed inbound queues, and outbound text commands. The scene polls that link each frame, posts network messages into the HUD log, and lets `MatchSession` continue to run the same turn model as local play.
+Netplay keeps the same match/session/rendering structure and swaps in a network-backed player layer. `NetworkLink` handles the socket connection, background reader thread, parsed inbound queues, and outbound text commands. The scene polls that link each frame, posts network messages into the HUD log, and lets `MatchSession` continue to run the same turn model as local play.
 
-That means the network code is acting as a transport adapter, not as a second game engine.
+The network code therefore acts as a transport adapter, not as a second game engine.
 
 ### Why this split is useful
 
 This architecture makes the project easier to extend without rewriting the whole loop:
 
 - new player types can plug into the `Player` interface
-- replay support works because the turn/session data is already separated from rendering
+- replay support works because turn/session data is separated from rendering
 - board and HUD rendering can evolve without rewriting move validation
 - netplay can reuse the same match logic instead of duplicating game rules on the scene side
 
-It also explains why some files look broader than others: scenes coordinate, sessions own runtime state, core files define the rules, and UI files only render.
+Scenes coordinate, sessions own runtime state, core files define the rules, and UI files only render.
 
