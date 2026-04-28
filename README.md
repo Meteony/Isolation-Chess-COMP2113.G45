@@ -2,12 +2,12 @@
 
 A terminal-based C++ implementation of Isolation Chess with local play, three AI difficulty levels, replay save/load, a replay browser, and simple two-player netplay.
 
-This README reflects the current launcher-based version in the repository, not the older scene/app planning notes.
+![Main Application Window](assets/Isolation-GIF-01.gif)
 
 ## Team members (in alphabetical order)
 
 - Cecilia
-- Emmanuel: initial concept; core architecture design; code integration among members; UI layer & netplay implementation.
+- Emmanuel: initial concept, core architecture design, code integration among members, UI layer & netplay implementation.
 - Gino
 - Haneef
 - Noah
@@ -25,22 +25,32 @@ Original concept reference: <https://scratch.mit.edu/projects/241565591/>
 
 - **Local multiplayer**: Human vs Human
 - **Single-player**: Human vs CPU with **Easy**, **Medium**, and **Hard** AI
+  - ![Replay Demo](assets/Isolation-GIF-05.gif)
+
 - **Replay system**:
   - save finished or in-progress games from the HUD command box
   - load replays from the built-in replay browser
   - replay stepping, reset, and autoplay
   - replay files also preserve player names and stored UI messages
+  ![Replay Demo](assets/Isolation-GIF-02.gif)
+  
 - **Netplay**:
   - room-based two-player connection through a lightweight Python relay server
   - player tags exchanged during handshake
   - in-game chat through the HUD command box
+  ![Replay Demo](assets/Isolation-GIF-03.gif)
+
 - **Settings editor** from the launcher:
   - server IP
   - server port
   - local player tag
+  ![Settings Demo](assets/Isolation-GIF-04.gif)
+
 - **Dynamic ncurses layout**:
   - board and HUD relayout on terminal resize
   - board scrolling when the viewport is smaller than the full board
+  ![Settings Demo](assets/Isolation-GIF-06.gif)
+
 - **Colorized HUD log messages** for player actions, help output, replay saves, and network status
 
 ## What the current launcher does
