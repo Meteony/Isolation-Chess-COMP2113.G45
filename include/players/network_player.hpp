@@ -660,7 +660,7 @@ if (link.mySide() == Side::Player1) {
   p2 = new netplay::NetworkHumanPlayer(link);
 }
 
-MatchSession session(9, 11, p1, p2);
+MatchSession session = MatchSession::TakeOwnership(9, 11, p1, p2);
 
 // Inside main loop, surface network log lines into the HUD:
 // std::string msg;

@@ -62,9 +62,8 @@ int main(int argc, char** argv) {
   curs_set(0);
   timeout(0);
 
-  MatchSession session(9, 11, new HumanPlayer(),
-                       new AiPlayer(difficulty, Side::Player2),
-                       settings->gameTag, aiName);
+  MatchSession session = MatchSession::CreateHumanVsAi(
+      9, 11, difficulty, settings->gameTag, aiName);
 
   constexpr int kBoardMaxRows = 20;
   constexpr int kBoardMaxCols = 48;

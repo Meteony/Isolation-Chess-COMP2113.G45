@@ -65,8 +65,8 @@ int main() {
   keypad(stdscr, TRUE);
   curs_set(0);
 
-  MatchSession session(7, 7, new HumanPlayer(),
-                       new HumanPlayer()  // swap to AiPlayer later if desired
+  MatchSession session = MatchSession::CreateHumanVsHuman(
+      7, 7  // swap to CreateHumanVsAi later if desired
   );
 
   bool running = true;

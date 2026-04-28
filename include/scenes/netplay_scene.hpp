@@ -79,6 +79,25 @@ inline void drawCenteredStatusBox(const std::string& title,
   refresh();
 }
 
+// Builds the two network-aware players and transfers ownership to MatchSession.
+// Keep this here instead of MatchSession so the core session does not need to
+// include the platform-specific netplay player header.
+inline MatchSession createNetplayMatchSession(netplay::NetworkLink& link) {
+  Player* p1 = nullptr;
+  Player* p2 = nullptr;
+
+  if (link.mySide() == Side::Player1) {
+    p1 = new netplay::NetworkHumanPlayer(link);
+    p2 = new netplay::NetworkPlayer(link);
+  } else {
+    p1 = new netplay::NetworkPlayer(link);
+    p2 = new netplay::NetworkHumanPlayer(link);
+  }
+
+  return MatchSession::TakeOwnership(9, 11, p1, p2, link.player1Tag(),
+                                     link.player2Tag());
+}
+
 // Runs the netplay scene for roomCode and returns an exit code.
 inline int runNetplay(const Settings& settings, const std::string& roomCode,
                       BlizzardEffect* effect = nullptr) {
@@ -128,17 +147,7 @@ inline int runNetplay(const Settings& settings, const std::string& roomCode,
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
-  Player* p1 = nullptr;
-  Player* p2 = nullptr;
-  if (link.mySide() == Side::Player1) {
-    p1 = new netplay::NetworkHumanPlayer(link);
-    p2 = new netplay::NetworkPlayer(link);
-  } else {
-    p1 = new netplay::NetworkPlayer(link);
-    p2 = new netplay::NetworkHumanPlayer(link);
-  }
-
-  MatchSession session(9, 11, p1, p2, link.player1Tag(), link.player2Tag());
+  MatchSession session = createNetplayMatchSession(link);
   BoardRenderer board;
   GameHud hud;
   relayoutGameScene(board, hud);

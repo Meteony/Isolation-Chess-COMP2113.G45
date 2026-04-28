@@ -59,7 +59,9 @@ int main() {
     p2 = new netplay::NetworkHumanPlayer(link);
   }
 
-  MatchSession session(9, 11, p1, p2, link.player1Tag(), link.player2Tag());
+  MatchSession session = MatchSession::TakeOwnership(9, 11, p1, p2,
+                                                   link.player1Tag(),
+                                                   link.player2Tag());
 
   std::setlocale(LC_ALL, "");
 

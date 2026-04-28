@@ -20,12 +20,9 @@
 
 namespace scenes {
 
-// Runs one live match scene and returns an exit code.
-inline int runLiveMatchSession(Player* p1, Player* p2,
-                               const std::string& player1Name,
-                               const std::string& player2Name,
+// Runs one already-created live match scene and returns an exit code.
+inline int runLiveMatchSession(MatchSession& session,
                                BlizzardEffect* effect = nullptr) {
-  MatchSession session(9, 11, p1, p2, player1Name, player2Name);
   BoardRenderer board;
   GameHud hud;
   relayoutGameScene(board, hud);
@@ -106,8 +103,9 @@ inline int runLiveMatchSession(Player* p1, Player* p2,
 // Runs a local human-vs-human match from settings.
 inline int runHumanVsHuman(const Settings& settings,
                            BlizzardEffect* effect = nullptr) {
-  return runLiveMatchSession(new HumanPlayer(), new HumanPlayer(),
-                             settings.gameTag, "Player 2", effect);
+  MatchSession session =
+      MatchSession::CreateHumanVsHuman(9, 11, settings.gameTag, "Player 2");
+  return runLiveMatchSession(session, effect);
 }
 
 // Returns the display label for an AI difficulty.
@@ -126,9 +124,9 @@ inline std::string difficultyLabel(AiDifficulty difficulty) {
 // Runs a local human-vs-CPU match from settings.
 inline int runHumanVsCpu(const Settings& settings, AiDifficulty difficulty,
                          BlizzardEffect* effect = nullptr) {
-  return runLiveMatchSession(
-      new HumanPlayer(), new AiPlayer(difficulty, Side::Player2),
-      settings.gameTag, difficultyLabel(difficulty), effect);
+  MatchSession session = MatchSession::CreateHumanVsAi(
+      9, 11, difficulty, settings.gameTag, difficultyLabel(difficulty));
+  return runLiveMatchSession(session, effect);
 }
 
 }  // namespace scenes

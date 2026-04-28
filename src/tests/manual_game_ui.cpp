@@ -23,8 +23,8 @@ int main() {
   curs_set(0);
   timeout(100);
 
-  MatchSession session(9, 11, new HumanPlayer(),
-                       new AiPlayer(AiDifficulty::Medium, Side::Player2));
+  MatchSession session = MatchSession::CreateHumanVsAi(
+      9, 11, AiDifficulty::Medium);
 
   BoardRenderer board;
   board.moveTo(0, 0);

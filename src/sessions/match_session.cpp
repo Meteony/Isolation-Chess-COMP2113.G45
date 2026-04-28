@@ -9,7 +9,39 @@
 #include "players/ai_player.hpp"
 #include "players/human_player.hpp"
 
-/* Initialization Constructor. Names optional */
+MatchSession MatchSession::CreateHumanVsHuman(
+    int rows, int cols, std::string player1Name, std::string player2Name) {
+  return MatchSession(rows, cols, new HumanPlayer(), new HumanPlayer(),
+                      player1Name, player2Name);
+}
+
+MatchSession MatchSession::CreateHumanVsAi(int rows, int cols,
+                                           AiDifficulty difficulty,
+                                           std::string humanName,
+                                           std::string aiName) {
+  return MatchSession(rows, cols, new HumanPlayer(),
+                      new AiPlayer(difficulty, Side::Player2), humanName,
+                      aiName);
+}
+
+MatchSession MatchSession::CreateAiVsAi(
+    int rows, int cols, AiDifficulty player1Difficulty,
+    AiDifficulty player2Difficulty, std::string player1Name,
+    std::string player2Name) {
+  return MatchSession(rows, cols,
+                      new AiPlayer(player1Difficulty, Side::Player1),
+                      new AiPlayer(player2Difficulty, Side::Player2),
+                      player1Name, player2Name);
+}
+
+MatchSession MatchSession::TakeOwnership(int rows, int cols, Player* p1,
+                                         Player* p2,
+                                         std::string player1Name,
+                                         std::string player2Name) {
+  return MatchSession(rows, cols, p1, p2, player1Name, player2Name);
+}
+
+/* Private initialization constructor. Use the public factories above. */
 MatchSession::MatchSession(int rows, int cols, Player* p1, Player* p2,
                            std::string player1Name, std::string player2Name)
     : m_initialState(rows, cols),

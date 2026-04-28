@@ -77,17 +77,12 @@ int main() {
     return 0;
   }
 
-  // build the right players based on what was chosen
-  Player* p1 = new HumanPlayer();
-  Player* p2 = nullptr;
-
-  if (choice.mode == MenuChoice::HumanVsHuman) {
-    p2 = new HumanPlayer();
-  } else {
-    p2 = new AiPlayer(choice.difficulty, Side::Player2);
-  }
-
-  MatchSession session(7, 7, p1, p2);
+  // Build the session through the public factories so this test mirrors the
+  // normal ownership path used by the real scenes.
+  MatchSession session =
+      (choice.mode == MenuChoice::HumanVsHuman)
+          ? MatchSession::CreateHumanVsHuman(7, 7)
+          : MatchSession::CreateHumanVsAi(7, 7, choice.difficulty);
 
   // switch to non-blocking for the game loop
   nodelay(stdscr, true);
