@@ -7,7 +7,7 @@ This README reflects the current launcher-based version in the repository, not t
 ## Team members (in alphabetical order)
 
 - Cecilia
-- Emmanuel
+- Emmanuel: initial concept; core architecture design; code integration among members; UI layer & netplay implementation.
 - Gino
 - Haneef
 - Noah
@@ -387,21 +387,6 @@ The launcher will also create default settings if loading fails.
   - command input box
 - Replay mode expands the HUD status section to show progress, playback speed, and autoplay status.
 - The board viewport can scroll independently when the visible area is smaller than the logical board.
-
-## Repository state note
-
-This repository still contains some older planning or prototype files, including earlier `Scene` / `App` abstractions and deprecated test files. The current shipped launcher path is the one described above under **What the current launcher does**.
-
-## Known rough edges worth keeping in mind
-
-- Netplay still depends on running the separate Python relay server before connecting.
-- Some older UI scaffolding files are still present even though `src/main.cpp` now drives the active launcher flow directly.
-- There are both `tests/` files and some older `src/tests/` files in the tree from earlier iterations.
-
-## Credits
-
-Built as a COMP2113 group project around a terminal-based Isolation Chess implementation, with local play, AI, replay support, and lightweight netplay.
-
 
 ## Architecture overview
 
