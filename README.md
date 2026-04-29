@@ -6,7 +6,7 @@ A terminal-based C++ implementation of Isolation Chess with local play, three AI
 
 ## Team members (in alphabetical order)
 
-- Cecilia
+- Cecilia: replay logic implementation (replay playback, stepping, autoplay); "Compliance with code requirements" section in README
 - Emmanuel: initial concept; core architecture design; code integration among members; UI layer and netplay implementation
 - Gino: core AI logic; AIPlayer interaction; GameSession and rules tweaks
 - Haneef
