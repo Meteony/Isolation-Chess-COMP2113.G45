@@ -8,7 +8,7 @@ A terminal-based C++ implementation of Isolation Chess with local play, three AI
 
 - Cecilia
 - Emmanuel: initial concept, core architecture design, code integration among members, UI layer & netplay implementation.
-- Gino
+- Gino: Ai logic, interaction of Ai_player, tweak'd the gameSession & rules a bit.
 - Haneef
 - Noah
 - Scott: Implemented GameRules module and related core tests. Implemented the replay saving/reading part. Recorded and edited the project demo video.
