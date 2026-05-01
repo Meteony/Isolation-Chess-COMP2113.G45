@@ -33,7 +33,7 @@ inline void ensureUiColorsInitialized() {
 
     (COLORS >= 256) ? init_pair(CP_P1, 202, -1)
                     : init_pair(CP_P1, COLOR_YELLOW, -1);
-    init_pair(CP_P2, COLOR_BLUE, -1);
+    init_pair(CP_P2, COLOR_CYAN, -1);
 
     if (COLORS >= 256) {
       init_pair(CP_FRAME, 246, -1);
