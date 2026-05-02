@@ -1,0 +1,219 @@
+HEADER
+rows=9
+cols=11
+p1_row=4
+p1_col=0
+p2_row=4
+p2_col=10
+side_to_move=0
+phase=0
+status=0
+winner=1
+player1_name=Scott
+player2_name=Emmanuel
+TILES
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+END_TILES
+END_HEADER
+TURNS
+0 5 1 5 9 100 141
+1 3 9 5 3 73 61
+0 4 2 3 8 92 37
+1 4 8 4 4 36 20
+0 3 3 3 7 56 24
+1 5 7 3 4 37 56
+0 2 4 6 6 66 48
+1 4 6 3 5 64 176
+0 2 5 5 5 81 44
+1 3 6 2 4 51 53
+0 2 6 4 6 39 39
+1 2 5 1 5 56 408
+0 2 7 1 4 84 30
+1 3 6 0 5 103 102
+0 2 8 5 4 139 77
+1 4 7 3 9 144 35
+0 2 9 6 7 121 33
+1 5 6 3 10 46 36
+0 2 8 6 5 27 30
+1 5 7 2 7 139 58
+0 1 9 6 8 31 30
+1 5 8 1 7 287 110
+0 1 10 6 9 75 32
+1 4 7 1 8 181 403
+0 0 9 3 6 155 117
+1 5 7 0 8 348 120
+0 1 9 4 8 61 74
+1 5 8 2 9 133 55
+0 1 10 4 9 75 26
+1 5 7 1 9 146 386
+0 0 9 4 7 208 122
+1 5 6 1 10 76 90
+0 0 10 5 7 116 102
+1 4 5 0 9 77 99
+END_TURNS
+UI_MESSAGES
+count=155
+msg="<YELLOW>[i] Netplay connected."
+msg="<YELLOW>[i] Scott vs Emmanuel"
+msg="<YELLOW>[net] peer joined; match can start"
+msg="<YELLOW>[i] Turn <YELLOW>1"
+msg="<YELLOW>[net] << MOVE 1 5 1"
+msg="<P1>Scott: hi"
+msg="<YELLOW>[net] << BREAK 1 5 9"
+msg="<P1>Scott: Finished in 12.05s"
+msg="<YELLOW>[i] Turn <YELLOW>2"
+msg="<P2>Emmanuel: yooo <YELLOW> hi"
+msg="<YELLOW>[net] >> CHAT yooo <YELLOW> hi"
+msg="<YELLOW>[net] >> MOVE 1 3 9"
+msg="<P2>Emmanuel: Finished in 6.70s"
+msg="<YELLOW>[net] >> BREAK 1 5 3"
+msg="<YELLOW>[i] Turn <YELLOW>3"
+msg="<YELLOW>[net] << MOVE 2 4 2"
+msg="<YELLOW>[net] << BREAK 2 3 8"
+msg="<P1>Scott: Finished in 6.45s"
+msg="<YELLOW>[i] Turn <YELLOW>4"
+msg="<YELLOW>[net] >> MOVE 2 4 8"
+msg="<P2>Emmanuel: Finished in 2.80s"
+msg="<YELLOW>[net] >> BREAK 2 4 4"
+msg="<YELLOW>[i] Turn <YELLOW>5"
+msg="<YELLOW>[net] << MOVE 3 3 3"
+msg="<YELLOW>[net] << BREAK 3 3 7"
+msg="<P1>Scott: Finished in 4s"
+msg="<YELLOW>[i] Turn <YELLOW>6"
+msg="<YELLOW>[net] >> MOVE 3 5 7"
+msg="<P2>Emmanuel: Finished in 4.65s"
+msg="<YELLOW>[net] >> BREAK 3 3 4"
+msg="<YELLOW>[i] Turn <YELLOW>7"
+msg="<YELLOW>[net] << MOVE 4 2 4"
+msg="<YELLOW>[net] << BREAK 4 6 6"
+msg="<P1>Scott: Finished in 5.70s"
+msg="<YELLOW>[i] Turn <YELLOW>8"
+msg="<YELLOW>[net] >> MOVE 4 4 6"
+msg="<P2>Emmanuel: Finished in 12s"
+msg="<YELLOW>[net] >> BREAK 4 3 5"
+msg="<YELLOW>[i] Turn <YELLOW>9"
+msg="<YELLOW>[net] << MOVE 5 2 5"
+msg="<YELLOW>[net] << BREAK 5 5 5"
+msg="<P1>Scott: Finished in 6.25s"
+msg="<YELLOW>[i] Turn <YELLOW>10"
+msg="<YELLOW>[net] >> MOVE 5 3 6"
+msg="<P2>Emmanuel: Finished in 5.20s"
+msg="<YELLOW>[net] >> BREAK 5 2 4"
+msg="<YELLOW>[i] Turn <YELLOW>11"
+msg="<YELLOW>[net] << MOVE 6 2 6"
+msg="<YELLOW>[net] << BREAK 6 4 6"
+msg="<P1>Scott: Finished in 3.90s"
+msg="<YELLOW>[i] Turn <YELLOW>12"
+msg="<YELLOW>[net] >> MOVE 6 2 5"
+msg="<P2>Emmanuel: Finished in 23.20s"
+msg="<YELLOW>[net] >> BREAK 6 1 5"
+msg="<YELLOW>[i] Turn <YELLOW>13"
+msg="<YELLOW>[net] << MOVE 7 2 7"
+msg="<YELLOW>[net] << BREAK 7 1 4"
+msg="<P1>Scott: Finished in 5.70s"
+msg="<YELLOW>[i] Turn <YELLOW>14"
+msg="<YELLOW>[net] >> MOVE 7 3 6"
+msg="<P2>Emmanuel: Finished in 10.25s"
+msg="<YELLOW>[net] >> BREAK 7 0 5"
+msg="<YELLOW>[i] Turn <YELLOW>15"
+msg="<YELLOW>[net] << MOVE 8 2 8"
+msg="<YELLOW>[net] << BREAK 8 5 4"
+msg="<P1>Scott: Finished in 10.80s"
+msg="<YELLOW>[i] Turn <YELLOW>16"
+msg="<YELLOW>[net] >> MOVE 8 4 7"
+msg="<P2>Emmanuel: Finished in 8.95s"
+msg="<YELLOW>[net] >> BREAK 8 3 9"
+msg="<YELLOW>[i] Turn <YELLOW>17"
+msg="<YELLOW>[net] << MOVE 9 2 9"
+msg="<YELLOW>[net] << BREAK 9 6 7"
+msg="<P1>Scott: Finished in 7.70s"
+msg="<YELLOW>[i] Turn <YELLOW>18"
+msg="<YELLOW>[net] >> MOVE 9 5 6"
+msg="<P2>Emmanuel: Finished in 4.10s"
+msg="<YELLOW>[net] >> BREAK 9 3 10"
+msg="<YELLOW>[i] Turn <YELLOW>19"
+msg="<YELLOW>[net] << MOVE 10 2 8"
+msg="<YELLOW>[net] << BREAK 10 6 5"
+msg="<P1>Scott: Finished in 2.85s"
+msg="<YELLOW>[i] Turn <YELLOW>20"
+msg="<YELLOW>[net] >> MOVE 10 5 7"
+msg="<P2>Emmanuel: Finished in 9.85s"
+msg="<YELLOW>[net] >> BREAK 10 2 7"
+msg="<YELLOW>[i] Turn <YELLOW>21"
+msg="<YELLOW>[net] << MOVE 11 1 9"
+msg="<YELLOW>[net] << BREAK 11 6 8"
+msg="<P1>Scott: Finished in 3.05s"
+msg="<YELLOW>[i] Turn <YELLOW>22"
+msg="<YELLOW>[net] >> MOVE 11 5 8"
+msg="<P2>Emmanuel: Finished in 19.85s"
+msg="<YELLOW>[net] >> BREAK 11 1 7"
+msg="<YELLOW>[i] Turn <YELLOW>23"
+msg="<YELLOW>[net] << MOVE 12 1 10"
+msg="<P2>Emmanuel: am i cooked"
+msg="<YELLOW>[net] >> CHAT am i cooked"
+msg="<YELLOW>[net] << BREAK 12 6 9"
+msg="<P1>Scott: Finished in 5.35s"
+msg="<YELLOW>[i] Turn <YELLOW>24"
+msg="<YELLOW>[net] >> MOVE 12 4 7"
+msg="<P1>Scott: seems yes"
+msg="<P2>Emmanuel: Finished in 29.20s"
+msg="<YELLOW>[net] >> BREAK 12 1 8"
+msg="<YELLOW>[i] Turn <YELLOW>25"
+msg="<P2>Emmanuel: dam"
+msg="<YELLOW>[net] >> CHAT dam"
+msg="<YELLOW>[net] << MOVE 13 0 9"
+msg="<YELLOW>[net] << BREAK 13 3 6"
+msg="<P1>Scott: Finished in 13.60s"
+msg="<YELLOW>[i] Turn <YELLOW>26"
+msg="<YELLOW>[net] >> MOVE 13 5 7"
+msg="<P2>Emmanuel: Finished in 23.40s"
+msg="<YELLOW>[net] >> BREAK 13 0 8"
+msg="<YELLOW>[i] Turn <YELLOW>27"
+msg="<YELLOW>[net] << MOVE 14 1 9"
+msg="<YELLOW>[net] << BREAK 14 4 8"
+msg="<P1>Scott: Finished in 6.75s"
+msg="<YELLOW>[i] Turn <YELLOW>28"
+msg="<YELLOW>[net] >> MOVE 14 5 8"
+msg="<P2>Emmanuel: Finished in 9.40s"
+msg="<YELLOW>[net] >> BREAK 14 2 9"
+msg="<YELLOW>[i] Turn <YELLOW>29"
+msg="<YELLOW>[net] << MOVE 15 1 10"
+msg="<YELLOW>[net] << BREAK 15 4 9"
+msg="<P1>Scott: Finished in 5.05s"
+msg="<YELLOW>[i] Turn <YELLOW>30"
+msg="<YELLOW>[net] >> MOVE 15 5 7"
+msg="<P2>Emmanuel: Finished in 26.60s"
+msg="<YELLOW>[net] >> BREAK 15 1 9"
+msg="<YELLOW>[i] Turn <YELLOW>31"
+msg="<YELLOW>[net] << MOVE 16 0 9"
+msg="<YELLOW>[net] << BREAK 16 4 7"
+msg="<P1>Scott: Finished in 16.50s"
+msg="<YELLOW>[i] Turn <YELLOW>32"
+msg="<YELLOW>[net] >> MOVE 16 5 6"
+msg="<P2>Emmanuel: Finished in 8.30s"
+msg="<YELLOW>[net] >> BREAK 16 1 10"
+msg="<YELLOW>[i] Turn <YELLOW>33"
+msg="<P1>Scott: wait no"
+msg="<YELLOW>[net] << MOVE 17 0 10"
+msg="<P2>Emmanuel: LMAOOOOOOOOOOOOOOO"
+msg="<YELLOW>[net] >> CHAT LMAOOOOOOOOOOOOOOO"
+msg="<YELLOW>[net] << BREAK 17 5 7"
+msg="<P1>Scott: Finished in 10.90s"
+msg="<YELLOW>[i] Turn <YELLOW>34"
+msg="<YELLOW>[net] >> MOVE 17 4 5"
+msg="<P2>Emmanuel: gottem"
+msg="<YELLOW>[net] >> CHAT gottem"
+msg="<P2>Emmanuel: Finished in 8.80s"
+msg="<YELLOW>Result: <P2>Emmanuel wins."
+msg="<YELLOW>[net] >> BREAK 17 0 9"
+msg="<P1>Scott: wrong movement"
+msg="<P1>Scott: lmao"
+END_UI_MESSAGES
