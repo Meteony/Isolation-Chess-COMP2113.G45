@@ -81,15 +81,14 @@ The main runtime path uses:
 
 ### Launcher menus
 
-The launcher and browser menus are currently digit-driven.
+The launcher and browser menus are fully keyboard-driven.
 
-- `1`-`8` select menu items
-- `0` exits from the main launcher
+- `WASD` move the selection cursor
+- `C` confirm selection
+- `TAB` switch focused window
 - replay browser uses:
-  - `1`-`7` open visible replay entries
-  - `8` return
-  - `9` previous page
-  - `0` next page
+  - `WS` move cursor up / down
+  - `AD` flip page
 
 ### Live match controls
 
@@ -137,6 +136,8 @@ When the **HUD is focused**, the command box accepts:
 - `:play` — toggle autoplay
 - `:back` — step backward
 - `:forward` — step forward
+- `:speed` — set playback speeed
+- `:goto [turn]` — go to a specific turn
 
 ## Netplay
 
@@ -246,8 +247,9 @@ This is the current layout that matters for the active launcher path.
 
 ### Key files
 
-- `src/main.cpp` — launcher, settings UI, replay browser
+- `src/main.cpp` — main app-layer control
 - `include/scenes/live_match_scene.hpp` — local match runtime
+- `include/scenes/main_menu_scene.hpp` — main menu runtime
 - `include/scenes/netplay_scene.hpp` — netplay runtime and waiting/connect flow
 - `include/scenes/replay_scene.hpp` — replay runtime
 - `include/scenes/scene_common.hpp` — shared ncurses guard and command handling
@@ -283,7 +285,7 @@ This is the current layout that matters for the active launcher path.
 
   Dynamic allocation is used to support polymorphism for different player types at runtime. For example:
 
-    - Player instances are created with `new` dynamically when scenes start matches in `include/scenes/live_match_scene.hpp`.
+    - Player instances are created with `new` dynamically via custom constructors in `include/scenes/live_match_scene.hpp`.
     - Ownership cleanup is explicitly handled in the `MatchSession` destructor in `src/sessions/match_session.cpp`.
     - `include/misc/blizzard_transition.hpp` uses manual allocation for its `BlizzardEffect` pens, creating them with `new` and releasing them in the effect destructor and update loop.
 
@@ -318,9 +320,9 @@ This is the current layout that matters for the active launcher path.
 ## Non-standard libraries and dependencies
 
 - `ncursesw` for the terminal UI and keyboard input handling
-- POSIX sockets (`arpa/inet.h`, `sys/socket.h`, `unistd.h`) for the netplay client
+- POSIX sockets (`arpa/inet.h`, `sys/socket.h`, `unistd.h`) for netplay
 - `pthread` / C++ threads for the background network reader
-- Python 3 for the relay server in `server/relay_server.py`
+- Python 3 for the relay server in `server/relay_server.py` (optional, not part of the main program)
 
 ## Compilation and execution
 
@@ -344,7 +346,7 @@ make launcher
 ./launcher
 ```
 
-### Other build targets
+### Other (deprecated) build targets
 
 ```bash
 make manual_curses_match
@@ -382,7 +384,7 @@ The launcher will also create default settings if loading fails.
 
 ## Architecture overview
 
-The current codebase is organized in layers rather than around one giant game loop file. The easiest way to read it is from the outside in:
+The current codebase is organized in layers rather than around one bundled game loop file. The easiest way to read it is from the outside in:
 
 ```text
 main.cpp / scene entry points
@@ -394,7 +396,7 @@ main.cpp / scene entry points
 
 Each frame follows the same general pattern:
 
-1. a scene reads input from `KeyQueue`
+1. a scene reads input from `KeyQueue` (a custom key input cache)
 2. the scene forwards board input to a session
 3. the session updates the authoritative state
 4. `BoardRenderer` and `GameHud` draw that state
@@ -407,13 +409,14 @@ Each frame follows the same general pattern:
 
 The scene headers in `include/scenes/` are thin runtime wrappers. They own the outer loop for a mode and coordinate input, layout, rendering, and top-level commands.
 
+- `main_menu_scene.hpp` runtime for the main menu interface
 - `live_match_scene.hpp` runs local human-vs-human and human-vs-AI matches
 - `netplay_scene.hpp` adds connection setup, waiting-room flow, chat handling, and network error handling
 - `replay_scene.hpp` runs replay playback and replay HUD commands
 - `replay_browser.hpp` is the file picker for saved `.isor` replays
 - `scene_common.hpp` contains shared helpers such as the ncurses guard and common save/quit command parsing
 
-These files deliberately do not contain the detailed game rules. They are mode orchestrators.
+These files deliberately do not contain the detailed game rules.
 
 #### 2. Session layer
 
@@ -463,7 +466,7 @@ Both renderers are fed by sessions rather than mutating the game directly. This 
 
 #### Local game flow
 
-For a normal match, `src/main.cpp` selects a mode, constructs the appropriate players, and calls `runLiveMatchSession(...)`. The scene owns the ncurses lifetime, focus switching, input dispatch, layout refresh, and top-level commands, while the actual turn progression lives inside `MatchSession::update(...)`.
+For a normal match, the game selects a mode and creates the appropriate `MatchSession` object, which then constructs the appropriate players. The scene owns the ncurses lifetime, focus switching, input dispatch, layout refresh, and top-level commands, while the actual turn progression lives inside `MatchSession::update(...)`.
 
 #### Replay flow
 
